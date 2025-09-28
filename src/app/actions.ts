@@ -15,19 +15,18 @@ export async function generateWebsiteAction(
   try {
     const result = await generateWebsite({ prompt });
     
+    // Explicitly check for the presence of websiteContent
     if (result?.websiteContent) {
-      // Success case
       return { websiteContent: result.websiteContent, error: null };
     } else {
-      // Handle cases where the AI returns a partial or empty response
+      // This will handle null, undefined, or empty string responses from the AI
       return {
         websiteContent: prevState.websiteContent,
-        error: 'The AI returned an unexpected response. Please try again.',
+        error: 'The AI returned an empty or invalid response. Please try again.',
       };
     }
   } catch (e: unknown) {
     console.error('Error in generateWebsiteAction:', e);
-    // Ensure a consistent error object is always returned
     const errorMessage = e instanceof Error ? e.message : 'An unknown error occurred.';
     return {
       websiteContent: prevState.websiteContent,
