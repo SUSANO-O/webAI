@@ -2,6 +2,7 @@
 
 import { createContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
+import { apiService } from '@/lib/api';
 
 interface User {
   name: string;
@@ -36,27 +37,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (email: string, pass: string) => {
-    // This is a mock login. In a real app, you'd call your API.
-    // e.g., POST to process.env.NEXT_PUBLIC_API_BASE_URL + '/login'
     setLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network delay
-    
-    // Mock users
-    if (email === 'admin@example.com' && pass === 'admin123') {
-      const adminUser: User = { name: 'Admin User', email, role: 'admin' };
-      localStorage.setItem('user', JSON.stringify(adminUser));
-      setUser(adminUser);
+    try {
+      await apiService.login({ email, password: pass });
+      // Rol básico: si el email contiene 'admin', marcar como admin; de lo contrario user
+      const role: User['role'] = email.toLowerCase().includes('admin') ? 'admin' : 'user';
+      const loggedUser: User = { name: email.split('@')[0], email, role };
+      localStorage.setItem('user', JSON.stringify(loggedUser));
+      setUser(loggedUser);
       router.push('/app');
-    } else if (email === 'user@example.com' && pass === 'user123') {
-      const regularUser: User = { name: 'Regular User', email, role: 'user' };
-      localStorage.setItem('user', JSON.stringify(regularUser));
-      setUser(regularUser);
-      router.push('/app');
-    } else {
+    } catch (e) {
+      throw e;
+    } finally {
       setLoading(false);
-      throw new Error('Invalid credentials');
     }
-    setLoading(false);
   };
 
   const logout = () => {

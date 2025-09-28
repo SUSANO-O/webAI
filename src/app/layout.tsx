@@ -4,7 +4,7 @@ import { AuthProvider } from '@/contexts/auth-context';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'AI Website Crafter',
+  title: 'web AI',
   description: 'Generate websites with the power of AI',
 };
 

@@ -15,7 +15,7 @@ import { Label } from '@/components/ui/label';
 import { FormEvent, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Loader } from 'lucide-react';
-import Icon from '@/app/icon';
+import AppIcon from '@/components/app-icon';
 
 export default function LoginPage() {
   const { login, loading } = useAuth();
@@ -42,7 +42,7 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit}>
           <CardHeader className="text-center">
             <div className="mx-auto mb-4 w-fit rounded-lg bg-primary/20 p-3">
-              <Icon />
+              <AppIcon />
             </div>
             <CardTitle className="font-headline text-2xl">AI Website Crafter</CardTitle>
             <CardDescription>Enter your credentials to access your account</CardDescription>

@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import Icon from '@/app/icon';
+import AppIcon from '@/components/app-icon';
 
 export function Header() {
   const { user, logout } = useAuth();
@@ -24,7 +24,7 @@ export function Header() {
           href="/app"
           className="flex items-center gap-2 text-lg font-semibold md:text-base"
         >
-          <Icon />
+          <AppIcon />
           <span className="font-headline font-bold text-xl">AI Website Crafter</span>
         </Link>
         <Link
