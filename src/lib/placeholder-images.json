@@ -1,0 +1,40 @@
+{
+  "placeholderImages": [
+    {
+      "id": "template-personal-portfolio",
+      "description": "A modern personal portfolio template.",
+      "imageUrl": "https://images.unsplash.com/photo-1502945015378-0e284ca1a5be?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxwb3J0Zm9saW8lMjB3ZWJzaXRlfGVufDB8fHx8MTc1ODgzMTMzN3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "portfolio website"
+    },
+    {
+      "id": "template-blog",
+      "description": "A clean and minimal blog template.",
+      "imageUrl": "https://images.unsplash.com/photo-1544044880-7bff5a36a7e4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxibG9nJTIwbGF5b3V0fGVufDB8fHx8MTc1ODc0NDI0OHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "blog layout"
+    },
+    {
+      "id": "template-ecommerce",
+      "description": "A stylish e-commerce product page.",
+      "imageUrl": "https://images.unsplash.com/photo-1691096673040-1632eb4b0a9d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxlY29tbWVyY2UlMjBwcm9kdWN0fGVufDB8fHx8MTc1ODg1NTg2NHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "ecommerce product"
+    },
+    {
+      "id": "template-landing-page",
+      "description": "A converting landing page for a SaaS product.",
+      "imageUrl": "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxsYW5kaW5nJTIwcGFnZXxlbnwwfHx8fDE3NTg4MTQyMDJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "landing page"
+    },
+    {
+      "id": "template-restaurant",
+      "description": "A website for a modern restaurant.",
+      "imageUrl": "https://images.unsplash.com/photo-1526069631228-723c945bea6b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxyZXN0YXVyYW50JTIwaW50ZXJpb3J8ZW58MHx8fHwxNzU4OTQwMzgzfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "restaurant interior"
+    },
+    {
+      "id": "template-small-business",
+      "description": "A website for a local service business.",
+      "imageUrl": "https://images.unsplash.com/photo-1454988501794-2992f706932e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxwbHVtYmluZyUyMHRvb2xzfGVufDB8fHx8MTc1ODk3Nzg0NXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "plumbing tools"
+    }
+  ]
+}
