@@ -82,6 +82,86 @@ class ApiService {
       },
     };
   }
+
+  // Template endpoints
+  async getTemplates(): Promise<Template[]> {
+    const response = await fetch(`${config.api.proxyUrl}?path=template/`, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...this.authHeader,
+      },
+    });
+    if (!response.ok) {
+      throw new Error('Error al obtener templates');
+    }
+    return response.json();
+  }
+
+  async createTemplate(templateData: CreateTemplateData): Promise<Template> {
+    const response = await fetch(`${config.api.proxyUrl}?path=template/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...this.authHeader,
+      },
+      body: JSON.stringify(templateData),
+    });
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ detail: 'Error al crear template' }));
+      throw new Error(error.detail || 'Error al crear template');
+    }
+    return response.json();
+  }
+
+  async updateTemplate(id: number, templateData: Partial<CreateTemplateData>): Promise<Template> {
+    const response = await fetch(`${config.api.proxyUrl}?path=template/${id}/`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        ...this.authHeader,
+      },
+      body: JSON.stringify(templateData),
+    });
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ detail: 'Error al actualizar template' }));
+      throw new Error(error.detail || 'Error al actualizar template');
+    }
+    return response.json();
+  }
+
+  async deleteTemplate(id: number): Promise<void> {
+    const response = await fetch(`${config.api.proxyUrl}?path=template/${id}/`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        ...this.authHeader,
+      },
+    });
+    if (!response.ok) {
+      throw new Error('Error al eliminar template');
+    }
+  }
+}
+
+export interface Template {
+  id: number;
+  name: string;
+  emailDesigner: string;
+  namespace: string;
+  email: string;
+  hidden: boolean;
+  created_at: string;
+  updated_at: string;
+  code?: string; // HTML code del template
+}
+
+export interface CreateTemplateData {
+  name: string;
+  emailDesigner: string;
+  namespace: string;
+  email: string;
+  hidden?: boolean;
+  code?: string; // HTML code del template
 }
 
 export const apiService = new ApiService();

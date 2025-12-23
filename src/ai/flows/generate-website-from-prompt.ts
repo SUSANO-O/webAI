@@ -28,7 +28,49 @@ const GenerateWebsiteOutputSchema = z.object({
 export type GenerateWebsiteOutput = z.infer<typeof GenerateWebsiteOutputSchema>;
 
 export async function generateWebsite(input: GenerateWebsiteInput): Promise<GenerateWebsiteOutput> {
-  return generateWebsiteFlow(input);
+  try {
+    // Intentar primero con Gemini
+    console.log('🤖 [generateWebsite] Intentando con Gemini...');
+    return await generateWebsiteFlow(input);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorString = JSON.stringify(error);
+    
+    // Detectar si es un error de Gemini
+    const isGeminiError = 
+      errorMessage.includes('Gemini') || 
+      errorMessage.includes('googleai') || 
+      errorMessage.includes('GoogleGenerativeAI') ||
+      errorMessage.includes('429') ||
+      errorMessage.includes('quota') ||
+      errorMessage.includes('GOOGLE_API_KEY') ||
+      errorMessage.includes('GEMINI_API_KEY') ||
+      errorMessage.includes('FAILED_PRECONDITION') ||
+      errorString.includes('generativelanguage.googleapis.com') ||
+      (error as any)?.status === 429;
+    
+    if (isGeminiError) {
+      console.error('❌ [generateWebsite] Error con Gemini:', errorMessage);
+      console.log('🔄 [generateWebsite] Intentando fallback con Hugging Face...');
+      
+      // Si falla, intentar con Hugging Face
+      try {
+        const { generateWebsiteWithHuggingFace } = await import('@/ai/huggingface-fallback');
+        const result = await generateWebsiteWithHuggingFace(input);
+        console.log('✅ [generateWebsite] Website generado exitosamente con Hugging Face');
+        return result;
+      } catch (fallbackError) {
+        console.error('❌ [generateWebsite] Error con Hugging Face fallback:', fallbackError);
+        // Si ambos fallan, lanzar el error original de Gemini
+        throw new Error(
+          `Failed to generate website with Gemini (${errorMessage}). Fallback to Hugging Face also failed: ${fallbackError instanceof Error ? fallbackError.message : 'Unknown error'}. Please check your API keys.`
+        );
+      }
+    } else {
+      // Si no es un error de Gemini, lanzar el error original
+      throw error;
+    }
+  }
 }
 
 const prompt = ai.definePrompt({

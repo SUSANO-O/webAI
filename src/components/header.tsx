@@ -25,7 +25,7 @@ export function Header() {
           className="flex items-center gap-2 text-lg font-semibold md:text-base"
         >
           <AppIcon />
-          <span className="font-headline font-bold text-xl">AI Website Crafter</span>
+          <span className="font-headline font-bold text-xl">AI Website</span>
         </Link>
         <Link
           href="/app"
@@ -33,7 +33,7 @@ export function Header() {
         >
           Dashboard
         </Link>
-        {user?.role === 'admin' && (
+        {user && (
           <Link
             href="/app/admin"
             className="text-muted-foreground transition-colors hover:text-foreground"

@@ -19,15 +19,7 @@ const nextConfig: NextConfig = {
     }
     return config;
   },
-  experimental: {
-    turbo: {
-      resolveAlias: {
-        fs: false,
-        path: false,
-        os: false,
-      },
-    },
-  },
+  // Turbo resolveAlias removed - webpack config above handles client-side fallbacks
   images: {
     remotePatterns: [
       {
