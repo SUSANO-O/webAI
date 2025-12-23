@@ -92,4 +92,4 @@ npm run genkit:watch
 - **Firebase** - Backend y autenticación
 - **Radix UI** - Componentes de UI accesibles
 
-Para más detalles, consulta `src/app/app/page.tsx`.
+
