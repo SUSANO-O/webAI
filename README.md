@@ -1,6 +1,6 @@
 # AI Website Crafter
 
-This is a NextJS starter in Firebase Studio that uses AI to generate websites from prompts.
+This is a NextJS starter in Firebase Studio that uses AI to generate websites from prompts
 
 ## 🚀 Inicio Rápido
 
