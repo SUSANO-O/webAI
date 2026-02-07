@@ -10,8 +10,8 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { apiService, type Template } from '@/lib/api';
-import { Loader2, Edit, Trash2, Eye, Copy, CheckCircle2, RefreshCw, Share2, ExternalLink } from 'lucide-react';
+import { apiService, toShortNamespace, type Template } from '@/lib/api';
+import { Loader2, Edit, Trash2, Eye, Copy, CheckCircle2, RefreshCw, Share2, ExternalLink, Sparkles, Wand2 } from 'lucide-react';
 
 export default function AdminPage() {
   const { user, loading: authLoading } = useAuth();
@@ -22,7 +22,6 @@ export default function AdminPage() {
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [editName, setEditName] = useState('');
-  const [editNamespace, setEditNamespace] = useState('');
   const [editCode, setEditCode] = useState('');
   const [saving, setSaving] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
@@ -60,8 +59,7 @@ export default function AdminPage() {
   const handleEdit = (template: Template) => {
     setSelectedTemplate(template);
     setEditName(template.name);
-    setEditNamespace(template.namespace);
-    setEditCode(template.code || '');
+    setEditCode(template.code || ''); // code is mapped from namespace by getTemplates()
     setShowEditDialog(true);
   };
 
@@ -70,10 +68,14 @@ export default function AdminPage() {
 
     setSaving(true);
     try {
+      // namespace: short id (max 100 chars). code: HTML content
       await apiService.updateTemplate(selectedTemplate.id, {
         name: editName,
-        namespace: editNamespace,
+        emailDesigner: selectedTemplate.emailDesigner,
+        namespace: toShortNamespace(editName),
         code: editCode,
+        email: selectedTemplate.email,
+        hidden: selectedTemplate.hidden,
       });
       
       toast({
@@ -143,6 +145,10 @@ export default function AdminPage() {
 
   const handleViewTemplate = (template: Template) => {
     router.push(`/app/edit-template/${template.id}`);
+  };
+
+  const handleAIEditor = (template: Template) => {
+    router.push(`/app/ai-editor/${template.id}`);
   };
 
   const handleShareTemplate = async (template: Template) => {
@@ -265,48 +271,19 @@ export default function AdminPage() {
                     <p>{new Date(template.created_at).toLocaleDateString()}</p>
                   </div>
                   
-                  {/* Acciones principales */}
-                  <div className="flex items-center gap-2 pt-2 border-t border-gray-700">
+                  {/* Acción principal - AI Editor */}
+                  <div className="pt-2 border-t border-gray-700">
                     <Button
-                      variant="outline"
                       size="sm"
-                      onClick={() => handleViewTemplate(template)}
-                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white border-blue-600"
+                      onClick={() => handleAIEditor(template)}
+                      className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0"
                     >
-                      <ExternalLink className="mr-2 h-3 w-3" />
-                      Ver/Editar
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleShareTemplate(template)}
-                      className="bg-gray-700 border-gray-600 text-white hover:bg-gray-600"
-                    >
-                      <Share2 className="h-3 w-3" />
+                      <Sparkles className="mr-2 h-4 w-4" />
+                      Editar con AI
                     </Button>
                   </div>
                   
-                  {/* Acciones secundarias */}
-                  <div className="flex items-center gap-2 pt-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleCopyUrl(template)}
-                      className="flex-1 bg-gray-700 border-gray-600 text-white hover:bg-gray-600 text-xs"
-                    >
-                      <Copy className="mr-1 h-3 w-3" />
-                      Copiar URL
-                    </Button>
-                    <div 
-                      className="flex items-center gap-1 text-xs text-gray-400 cursor-pointer hover:text-gray-300 px-2 py-1 rounded bg-gray-700" 
-                      onClick={() => handleCopyId(template.id)}
-                    >
-                      <Eye className="h-3 w-3" />
-                      <span>ID: {template.id}</span>
-                    </div>
-                  </div>
-                  
-                  {/* Botones de acción adicionales */}
+                  {/* URLs y acciones */}
                   <div className="flex gap-2 pt-2">
                     <Button
                       variant="outline"
@@ -343,23 +320,13 @@ export default function AdminPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-name">Nombre</Label>
-                <Input
-                  id="edit-name"
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-namespace">Namespace</Label>
-                <Input
-                  id="edit-namespace"
-                  value={editNamespace}
-                  onChange={(e) => setEditNamespace(e.target.value)}
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-name">Nombre</Label>
+              <Input
+                id="edit-name"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-code">Código HTML</Label>
@@ -388,7 +355,7 @@ export default function AdminPage() {
           <DialogHeader>
             <DialogTitle>{selectedTemplate?.name}</DialogTitle>
             <DialogDescription>
-              Preview del template: {selectedTemplate?.namespace}
+              Preview del template ID: {selectedTemplate?.id}
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">

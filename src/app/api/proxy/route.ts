@@ -86,8 +86,19 @@ export async function DELETE(request: NextRequest) {
         Authorization: authHeader,
       },
     });
-    const data = await response.json();
-    return NextResponse.json(data, { status: response.status });
+    if (response.status === 204) {
+      return new NextResponse(null, { status: 204 });
+    }
+    const text = await response.text();
+    if (!text) {
+      return new NextResponse(null, { status: response.status });
+    }
+    try {
+      const data = JSON.parse(text);
+      return NextResponse.json(data, { status: response.status });
+    } catch {
+      return new NextResponse(text, { status: response.status });
+    }
   } catch (e) {
     return NextResponse.json({ error: 'Proxy error' }, { status: 500 });
   }

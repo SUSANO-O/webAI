@@ -85,31 +85,29 @@ Generate the website now. Return ONLY the JSON object, no other text.`;
     // Usar el SDK oficial de Hugging Face
     const client = new InferenceClient(HUGGING_FACE_API_KEY);
 
-    // Modelos disponibles en la Inference API de Hugging Face (usando chatCompletion)
-    // DeepSeek-R1 es el modelo principal por su capacidad de razonamiento avanzado
+    // Modelos ordenados por confiabilidad y velocidad de respuesta
+    // Qwen3 primero (más reciente y potente), luego Qwen2.5, luego fallbacks
     const models = [
-      'deepseek-ai/DeepSeek-R1',
-      'Qwen/Qwen2.5-72B-Instruct',
-      'Qwen/Qwen2.5-Coder-32B-Instruct',
-      'mistralai/Mistral-7B-Instruct-v0.3',
-      'HuggingFaceH4/zephyr-7b-beta',
-      'microsoft/Phi-3-mini-4k-instruct',
-      'meta-llama/Llama-3.2-3B-Instruct',
+      { name: 'Qwen/Qwen3-32B', maxTokens: 4000 },
+      { name: 'Qwen/Qwen3-8B', maxTokens: 3000 },
+      { name: 'Qwen/Qwen2.5-72B-Instruct', maxTokens: 3000 },
+      { name: 'Qwen/Qwen2.5-Coder-32B-Instruct', maxTokens: 3000 },
+      { name: 'deepseek-ai/DeepSeek-R1', maxTokens: 4000 },
+      { name: 'mistralai/Mistral-7B-Instruct-v0.3', maxTokens: 2500 },
     ];
 
     // Intentar con cada modelo hasta que uno funcione
     let lastError: any = null;
 
-    for (const modelName of models) {
+    for (const model of models) {
       try {
-        console.log(`🔄 [HuggingFace] Intentando con modelo: ${modelName}`);
+        console.log(`🔄 [HuggingFace] Intentando con modelo: ${model.name}`);
 
         // Usar chatCompletion en lugar de textGeneration
-        // DeepSeek-R1 puede necesitar más tokens debido a su proceso de razonamiento
-        const maxTokens = modelName.includes('DeepSeek-R1') ? 8000 : 4000;
+        const maxTokens = model.maxTokens;
 
         const response = await client.chatCompletion({
-          model: modelName,
+          model: model.name,
           messages: [
             {
               role: 'system',
@@ -134,7 +132,7 @@ Generate the website now. Return ONLY the JSON object, no other text.`;
           throw new Error('No generated text in response');
         }
 
-        console.log(`✅ [HuggingFace] Respuesta recibida del modelo ${modelName}`);
+        console.log(`✅ [HuggingFace] Respuesta recibida del modelo ${model.name}`);
         console.log(`📄 [HuggingFace] Respuesta length: ${generatedText.length} chars`);
         return parseHuggingFaceResponse({ generated_text: generatedText });
 
@@ -143,11 +141,18 @@ Generate the website now. Return ONLY the JSON object, no other text.`;
         const errorMessage = modelError.message || String(modelError);
         const errorStatus = modelError.status || modelError.statusCode;
 
-        console.error(`❌ [HuggingFace] Modelo ${modelName} falló:`, {
+        console.error(`❌ [HuggingFace] Modelo ${model.name} falló:`, {
           message: errorMessage,
           status: errorStatus,
           error: modelError,
         });
+
+        // Gateway timeout / provider errors (504): wait and try next model
+        if (errorStatus === 504 || errorMessage?.includes('504') || errorMessage?.includes('gateway')) {
+          console.log('⏳ [HuggingFace] Timeout del proveedor (504). Probando siguiente modelo en 5s...');
+          await new Promise(resolve => setTimeout(resolve, 5000));
+          continue;
+        }
 
         // Si el modelo está cargando (503), esperar y reintentar
         if (errorStatus === 503 || errorMessage?.includes('503') || errorMessage?.includes('loading')) {
@@ -157,12 +162,12 @@ Generate the website now. Return ONLY the JSON object, no other text.`;
           // Reintentar una vez
           try {
             const retryResponse = await client.chatCompletion({
-              model: modelName,
+              model: model.name,
               messages: [
                 { role: 'system', content: systemPrompt },
                 { role: 'user', content: userPrompt },
               ],
-              max_tokens: maxTokens,
+              max_tokens: model.maxTokens,
               temperature: 0.7,
               top_p: 0.9,
             });

@@ -45,7 +45,9 @@ export default function ViewTemplatePage() {
     );
   }
 
-  if (!template || !template.code) {
+  const templateCode = template?.code || '';
+
+  if (!template || !templateCode) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-gray-900">
         <div className="text-center text-white">
@@ -77,7 +79,7 @@ export default function ViewTemplatePage() {
       </div>
       <div className="w-full h-[calc(100vh-120px)]">
         <iframe
-          srcDoc={template.code}
+          srcDoc={templateCode}
           title={template.name}
           className="w-full h-full border-0"
           sandbox="allow-scripts allow-same-origin"

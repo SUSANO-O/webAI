@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { apiService, type Template } from '@/lib/api';
+import { apiService, toShortNamespace, type Template } from '@/lib/api';
 import { Loader2, Save, Eye, ArrowLeft, Download, Share2, Code } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 
@@ -24,7 +24,6 @@ export default function EditTemplatePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [name, setName] = useState('');
-  const [namespace, setNamespace] = useState('');
   const [code, setCode] = useState('');
 
   useEffect(() => {
@@ -47,7 +46,6 @@ export default function EditTemplatePage() {
       if (found) {
         setTemplate(found);
         setName(found.name);
-        setNamespace(found.namespace);
         setCode(found.code || '');
       } else {
         toast({
@@ -75,10 +73,14 @@ export default function EditTemplatePage() {
 
     setSaving(true);
     try {
+      // namespace: short id (max 100 chars). code: HTML content
       await apiService.updateTemplate(template.id, {
         name,
-        namespace,
+        emailDesigner: template.emailDesigner,
+        namespace: toShortNamespace(name),
         code,
+        email: template.email,
+        hidden: template.hidden,
       });
       
       toast({
@@ -158,7 +160,7 @@ export default function EditTemplatePage() {
             </Button>
             <div>
               <h1 className="text-2xl font-headline font-bold">{name}</h1>
-              <p className="text-sm text-muted-foreground">Namespace: {namespace}</p>
+              <p className="text-sm text-muted-foreground">ID: {template?.id}</p>
             </div>
           </div>
           <div className="flex gap-2">
@@ -204,20 +206,12 @@ export default function EditTemplatePage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-namespace">Namespace</Label>
-              <Input
-                id="edit-namespace"
-                value={namespace}
-                onChange={(e) => setNamespace(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
               <Label htmlFor="edit-code">Código HTML</Label>
               <Textarea
                 id="edit-code"
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
-                className="min-h-[300px] font-mono text-xs"
+                className="min-h-[400px] font-mono text-xs"
               />
             </div>
           </div>
