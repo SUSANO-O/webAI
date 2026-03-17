@@ -7,8 +7,8 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const path = searchParams.get('path') || '';
     const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Basic ')) {
-      return NextResponse.json({ error: 'Authorization header requerido' }, { status: 401 });
+    if (!authHeader || (!authHeader.startsWith('Basic ') && !authHeader.startsWith('Bearer '))) {
+      return NextResponse.json({ error: 'Authorization header requerido (Bearer o Basic)' }, { status: 401 });
     }
     const response = await fetch(`${API_BASE}/${path}`, {
       headers: {
@@ -29,8 +29,8 @@ export async function POST(request: NextRequest) {
     const path = searchParams.get('path') || '';
     const authHeader = request.headers.get('authorization');
     const body = await request.json();
-    if (!authHeader || !authHeader.startsWith('Basic ')) {
-      return NextResponse.json({ error: 'Authorization header requerido' }, { status: 401 });
+    if (!authHeader || (!authHeader.startsWith('Basic ') && !authHeader.startsWith('Bearer '))) {
+      return NextResponse.json({ error: 'Authorization header requerido (Bearer o Basic)' }, { status: 401 });
     }
     const response = await fetch(`${API_BASE}/${path}`, {
       method: 'POST',
@@ -53,8 +53,8 @@ export async function PUT(request: NextRequest) {
     const path = searchParams.get('path') || '';
     const authHeader = request.headers.get('authorization');
     const body = await request.json();
-    if (!authHeader || !authHeader.startsWith('Basic ')) {
-      return NextResponse.json({ error: 'Authorization header requerido' }, { status: 401 });
+    if (!authHeader || (!authHeader.startsWith('Basic ') && !authHeader.startsWith('Bearer '))) {
+      return NextResponse.json({ error: 'Authorization header requerido (Bearer o Basic)' }, { status: 401 });
     }
     const response = await fetch(`${API_BASE}/${path}`, {
       method: 'PUT',
@@ -76,8 +76,8 @@ export async function DELETE(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const path = searchParams.get('path') || '';
     const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Basic ')) {
-      return NextResponse.json({ error: 'Authorization header requerido' }, { status: 401 });
+    if (!authHeader || (!authHeader.startsWith('Basic ') && !authHeader.startsWith('Bearer '))) {
+      return NextResponse.json({ error: 'Authorization header requerido (Bearer o Basic)' }, { status: 401 });
     }
     const response = await fetch(`${API_BASE}/${path}`, {
       method: 'DELETE',

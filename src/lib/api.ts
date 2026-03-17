@@ -58,62 +58,89 @@ function removeCodeLocally(templateId: number): void {
 class ApiService {
   private username: string | null = null;
   private password: string | null = null;
+  private authToken: string | null = null;
 
   constructor() {
+    this.loadCredentials();
+  }
+
+  private loadCredentials(): void {
     if (typeof window !== 'undefined') {
       this.username = localStorage.getItem(config.auth.usernameKey);
       this.password = localStorage.getItem(config.auth.passwordKey);
+      this.authToken = localStorage.getItem(config.auth.tokenKey);
     }
   }
 
   private get authHeader(): HeadersInit {
-    if (!this.username || !this.password) return {};
-    const token = btoa(`${this.username}:${this.password}`);
-    return { Authorization: `Basic ${token}` };
+    this.loadCredentials();
+    if (this.authToken) {
+      return { Authorization: `Bearer ${this.authToken}` };
+    }
+    if (this.username && this.password) {
+      const token = btoa(`${this.username}:${this.password}`);
+      return { Authorization: `Basic ${token}` };
+    }
+    return {};
+  }
+
+  setToken(access: string, email: string, user?: User): void {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(config.auth.tokenKey, access);
+      localStorage.setItem(config.auth.usernameKey, email);
+      localStorage.removeItem(config.auth.passwordKey);
+      if (user) localStorage.setItem('userData', JSON.stringify(user));
+    }
+    this.authToken = access;
+    this.username = email;
+    this.password = null;
   }
 
   setCredentials(username: string, password: string) {
     this.username = username;
     this.password = password;
+    this.authToken = null;
     if (typeof window !== 'undefined') {
       localStorage.setItem(config.auth.usernameKey, username);
       localStorage.setItem(config.auth.passwordKey, password);
+      localStorage.removeItem(config.auth.tokenKey);
     }
   }
 
   clearCredentials() {
     this.username = null;
     this.password = null;
+    this.authToken = null;
     if (typeof window !== 'undefined') {
       localStorage.removeItem(config.auth.usernameKey);
       localStorage.removeItem(config.auth.passwordKey);
+      localStorage.removeItem(config.auth.tokenKey);
+      localStorage.removeItem('userData');
     }
   }
 
   isAuthenticated(): boolean {
-    return !!(this.username && this.password);
+    this.loadCredentials();
+    return !!(this.authToken || (this.username && this.password));
   }
 
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
-    this.setCredentials(credentials.email, credentials.password);
-    const response = await fetch(`${config.api.proxyUrl}?path=user/`, {
-      headers: {
-        'Content-Type': 'application/json',
-        ...this.authHeader,
-      },
+    const login360Url = process.env.NEXT_PUBLIC_LOGIN_360_URL || 'http://localhost:3006';
+    const res = await fetch(`${login360Url}/api/v1/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(credentials),
     });
-    if (!response.ok) {
+    const data = await res.json();
+    if (!data.success || !data.access) {
       this.clearCredentials();
-      throw new Error('Credenciales inválidas');
+      throw new Error(data.error || 'Credenciales inválidas');
     }
+    this.setCredentials(credentials.email, credentials.password);
     return {
-      access: 'basic-auth-session',
-      refresh: 'basic-auth-session',
-      user: {
-        id: '1',
-        email: credentials.email,
-        username: credentials.email,
-      },
+      access: data.access,
+      refresh: data.refresh || 'basic-auth-session',
+      user: data.user || { id: '1', email: credentials.email, username: credentials.email },
     };
   }
 

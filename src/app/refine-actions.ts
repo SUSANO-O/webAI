@@ -1,6 +1,7 @@
 'use server';
 
 import { refineTemplate } from '@/ai/flows/refine-template';
+import { ai } from '@/ai/genkit';
 
 export interface ChatMessage {
   id: string;
@@ -149,6 +150,36 @@ export async function refineTemplateDirectAction(
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Error desconocido',
+    };
+  }
+}
+
+/** Describes an image for web design context using Gemini vision. Used to enrich prompts with image references. */
+export async function describeImageForContext(
+  imageBase64: string,
+  mimeType: string = 'image/jpeg'
+): Promise<{ success: boolean; description?: string; error?: string }> {
+  try {
+    const dataUrl = `data:${mimeType};base64,${imageBase64}`;
+    const response = await ai.generate({
+      prompt: [
+        { media: { url: dataUrl } },
+        {
+          text: `Describe this image briefly in 2-4 sentences, focused on: layout, colors, typography, style, and elements relevant to web design. 
+Write in Spanish. Be concise. This description will be used as reference context to improve a website template.`,
+        },
+      ],
+    });
+    const description = response?.text?.trim();
+    if (description) {
+      return { success: true, description: `[Referencia de imagen adjunta: ${description}]` };
+    }
+    return { success: false, error: 'No se pudo describir la imagen' };
+  } catch (error) {
+    console.error('❌ [describeImageForContext] Error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Error al procesar imagen',
     };
   }
 }

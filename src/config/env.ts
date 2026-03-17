@@ -11,6 +11,7 @@ export const config = {
   auth: {
     usernameKey: process.env.NEXT_PUBLIC_USERNAME_STORAGE_KEY || 'auth_username',
     passwordKey: process.env.NEXT_PUBLIC_PASSWORD_STORAGE_KEY || 'auth_password',
+    tokenKey: process.env.NEXT_PUBLIC_TOKEN_STORAGE_KEY || 'auth_token',
   },
 } as const;
 

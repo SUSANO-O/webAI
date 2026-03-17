@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,6 @@ import {
   Send, 
   ArrowLeft, 
   Download, 
-  Share2, 
   Save, 
   Check, 
   X,
@@ -25,7 +24,11 @@ import {
   Undo,
   History,
   Lightbulb,
-  Zap
+  Zap,
+  ImagePlus,
+  FileUp,
+  Mic,
+  MicOff,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -39,7 +42,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { refineTemplateDirectAction } from '@/app/refine-actions';
+import { refineTemplateDirectAction, describeImageForContext } from '@/app/refine-actions';
 
 interface ChatMessage {
   id: string;
@@ -92,6 +95,15 @@ export default function AIEditorPage() {
   
   const chatEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Attachments: enrich the prompt with images, files, or voice
+  const [attachedFileContent, setAttachedFileContent] = useState<string | null>(null);
+  const [attachedFileName, setAttachedFileName] = useState<string | null>(null);
+  const [isDescribingImage, setIsDescribingImage] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
 
   // Auto-scroll chat
   const scrollToBottom = () => {
@@ -409,6 +421,91 @@ Puedes pedirme cosas como:
     inputRef.current?.focus();
   };
 
+  // Image upload: describe with AI and append to prompt
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files?.length) return;
+    const file = files[0];
+    if (!file.type.startsWith('image/')) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Solo se permiten imágenes (PNG, JPG, etc.)' });
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const base64 = (reader.result as string).split(',')[1];
+      if (!base64) return;
+      setIsDescribingImage(true);
+      try {
+        const result = await describeImageForContext(base64, file.type);
+        if (result.success && result.description) {
+          setInputMessage(prev => prev ? `${prev}\n\n${result.description}` : result.description);
+          toast({ title: 'Imagen analizada', description: 'Descripción añadida al prompt' });
+        } else {
+          toast({ variant: 'destructive', title: 'Error', description: result.error });
+        }
+      } finally {
+        setIsDescribingImage(false);
+        e.target.value = '';
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // File upload: read text and append to prompt
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files?.length) return;
+    const file = files[0];
+    const textTypes = ['text/plain', 'text/html', 'text/css', 'text/markdown', 'application/json', 'application/javascript'];
+    if (!textTypes.includes(file.type) && !file.name.match(/\.(txt|md|html|css|json|js)$/i)) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Solo archivos de texto (txt, md, html, json, etc.)' });
+      e.target.value = '';
+      return;
+    }
+    try {
+      const text = await file.text();
+      const prefix = `[Contenido del archivo "${file.name}"]:\n`;
+      setAttachedFileContent(text);
+      setAttachedFileName(file.name);
+      setInputMessage(prev => prev ? `${prev}\n\n${prefix}${text}` : `${prefix}${text}`);
+      toast({ title: 'Archivo cargado', description: `"${file.name}" añadido al prompt` });
+    } catch {
+      toast({ variant: 'destructive', title: 'Error', description: 'No se pudo leer el archivo' });
+    }
+    e.target.value = '';
+  };
+
+  // Voice recording: Web Speech API
+  const toggleVoiceInput = () => {
+    const SpeechRecognition = (typeof window !== 'undefined' && (window as any).SpeechRecognition) || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      toast({ variant: 'destructive', title: 'No soportado', description: 'El reconocimiento de voz no está disponible en tu navegador (prueba Chrome o Edge)' });
+      return;
+    }
+    if (isRecording) {
+      recognitionRef.current?.stop();
+      setIsRecording(false);
+      return;
+    }
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'es-ES';
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
+      const transcript = Array.from(event.results)
+        .filter(r => r.isFinal)
+        .map(r => r[r.length - 1].transcript)
+        .join('');
+      if (transcript) setInputMessage(prev => (prev ? prev.trimEnd() + ' ' : '') + transcript);
+    };
+    recognition.onerror = () => setIsRecording(false);
+    recognition.onend = () => setIsRecording(false);
+    recognitionRef.current = recognition;
+    recognition.start();
+    setIsRecording(true);
+    toast({ title: 'Escuchando...', description: 'Habla y tu voz se transcribirá' });
+  };
+
   const hasUnsavedChanges = currentCode !== originalCode;
 
   if (authLoading || loading || !user) {
@@ -570,13 +667,27 @@ Puedes pedirme cosas como:
 
           {/* Input */}
           <div className="p-4 border-t border-gray-800">
+            <input
+              ref={imageInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleImageUpload}
+            />
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".txt,.md,.html,.css,.json,.js,text/*,application/json"
+              className="hidden"
+              onChange={handleFileUpload}
+            />
             <div className="flex gap-2">
               <Textarea
                 ref={inputRef}
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Escribe los cambios que quieres..."
+                placeholder="Escribe los cambios que quieres... O usa imagen, archivo o voz ↓"
                 className="min-h-[60px] max-h-[120px] bg-gray-800 border-gray-700 text-white placeholder:text-gray-500 resize-none"
                 disabled={isProcessing}
               />
@@ -591,6 +702,47 @@ Puedes pedirme cosas como:
                   <Send className="h-5 w-5" />
                 )}
               </Button>
+            </div>
+            <div className="flex items-center gap-2 mt-2 flex-wrap">
+              <span className="text-xs text-gray-500 mr-1">Enriquecer prompt:</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-xs text-gray-500 hover:text-purple-400"
+                onClick={() => imageInputRef.current?.click()}
+                disabled={isProcessing || isDescribingImage}
+                title="Subir imagen de referencia"
+              >
+                {isDescribingImage ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <ImagePlus className="h-3 w-3 mr-1" />}
+                Imagen
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-xs text-gray-500 hover:text-purple-400"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isProcessing}
+                title="Adjuntar archivo de texto"
+              >
+                <FileUp className="h-3 w-3 mr-1" />
+                Archivo
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className={cn("text-xs hover:text-purple-400", isRecording ? "text-red-400" : "text-gray-500")}
+                onClick={toggleVoiceInput}
+                disabled={isProcessing}
+                title="Grabar con voz"
+              >
+                {isRecording ? <MicOff className="h-3 w-3 mr-1" /> : <Mic className="h-3 w-3 mr-1" />}
+                Voz
+              </Button>
+              {(attachedFileName || attachedFileContent) && (
+                <Badge variant="outline" className="text-xs text-gray-400 border-gray-600">
+                  {attachedFileName}
+                </Badge>
+              )}
             </div>
             <div className="flex gap-2 mt-2">
               <Button

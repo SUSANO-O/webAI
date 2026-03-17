@@ -3,6 +3,7 @@
 import { createContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiService } from '@/lib/api';
+import { config } from '@/config/env';
 
 interface User {
   name: string;
@@ -24,23 +25,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  useEffect(() => {
-    console.log('🔐 [AuthContext] Inicializando contexto de autenticación...');
+  const checkAuthStatus = () => {
     try {
+      if (!apiService.isAuthenticated()) {
+        setUser(null);
+        return;
+      }
       const storedUser = localStorage.getItem('user');
-      console.log('🔍 [AuthContext] Usuario en localStorage:', storedUser);
+      const userData = localStorage.getItem('userData');
+      if (userData) {
+        try {
+          const parsed = JSON.parse(userData);
+          const role: User['role'] = (parsed.email || '').toLowerCase().includes('admin') ? 'admin' : 'user';
+          const u: User = { name: parsed.username || parsed.email?.split('@')[0] || 'User', email: parsed.email, role };
+          setUser(u);
+          localStorage.setItem('user', JSON.stringify(u));
+          return;
+        } catch {}
+      }
       if (storedUser) {
         const parsedUser = JSON.parse(storedUser);
-        console.log('✅ [AuthContext] Usuario parseado:', parsedUser);
         setUser(parsedUser);
       } else {
-        console.log('❌ [AuthContext] No hay usuario en localStorage');
+        const email = localStorage.getItem('auth_username') || localStorage.getItem(config.auth.usernameKey);
+        if (email) {
+          const role: User['role'] = email.toLowerCase().includes('admin') ? 'admin' : 'user';
+          const u: User = { name: email.split('@')[0], email, role };
+          setUser(u);
+          localStorage.setItem('user', JSON.stringify(u));
+        }
       }
     } catch (error) {
-      console.error('❌ [AuthContext] Error al parsear usuario:', error);
+      console.error('❌ [AuthContext] Error:', error);
+      setUser(null);
     }
+  };
+
+  useEffect(() => {
+    checkAuthStatus();
     setLoading(false);
-    console.log('🔐 [AuthContext] Contexto inicializado, loading = false');
+    const onAuthChanged = () => {
+      checkAuthStatus();
+    };
+    window.addEventListener('auth-changed', onAuthChanged);
+    return () => window.removeEventListener('auth-changed', onAuthChanged);
   }, []);
 
   const login = async (email: string, pass: string) => {
@@ -65,10 +93,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
-    console.log('🔐 [AuthContext] Haciendo logout');
+    apiService.clearCredentials();
     localStorage.removeItem('user');
     setUser(null);
-    console.log('✅ [AuthContext] Logout completado, redirigiendo a login');
     router.push('/login');
   };
 
