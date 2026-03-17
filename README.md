@@ -90,6 +90,8 @@ npm run genkit:watch
 - **TypeScript** - Tipado estático
 - **Tailwind CSS** - Estilos utilitarios
 - **Firebase** - Backend y autenticación
-- **Radix UI** - Componentes de UI accesibles
+- **Radix UI** - Componentes de UI accesibles.
+
+
 
 
