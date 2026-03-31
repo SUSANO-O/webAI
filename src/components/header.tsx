@@ -18,25 +18,25 @@ export function Header() {
   const { user, logout } = useAuth();
 
   return (
-    <header className="sticky top-0 z-50 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6">
+    <header className="sticky top-0 z-50 flex h-16 items-center gap-4 px-4 md:px-6 header-gradient shadow-lg border-b border-white/20">
       <nav className="hidden flex-col gap-6 text-lg font-medium md:flex md:flex-row md:items-center md:gap-5 md:text-sm lg:gap-6">
         <Link
           href="/app"
           className="flex items-center gap-2 text-lg font-semibold md:text-base"
         >
           <AppIcon />
-          <span className="font-headline font-bold text-xl">AI Website</span>
+          <span className="font-headline font-bold text-xl text-white drop-shadow">AI Website</span>
         </Link>
         <Link
           href="/app"
-          className="text-foreground transition-colors hover:text-foreground"
+          className="text-white/90 font-medium transition-colors hover:text-white"
         >
           Dashboard
         </Link>
         {user && (
           <Link
             href="/app/admin"
-            className="text-muted-foreground transition-colors hover:text-foreground"
+            className="text-white/70 font-medium transition-colors hover:text-white"
           >
             Admin
           </Link>
@@ -46,7 +46,7 @@ export function Header() {
         {user ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="secondary" size="icon" className="rounded-full">
+              <Button variant="secondary" size="icon" className="rounded-full bg-white/20 hover:bg-white/30 border border-white/30 text-white">
                 <CircleUser className="h-5 w-5" />
                 <span className="sr-only">Toggle user menu</span>
               </Button>
@@ -66,7 +66,7 @@ export function Header() {
             </DropdownMenuContent>
           </DropdownMenu>
         ) : (
-          <Button asChild>
+          <Button asChild className="bg-white/20 hover:bg-white/30 border border-white/30 text-white font-semibold">
             <Link href="/login">Login</Link>
           </Button>
         )}

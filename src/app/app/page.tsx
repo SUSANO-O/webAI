@@ -176,25 +176,28 @@ export default function Dashboard() {
   const isDefaultContent = editedContent === initialWebsiteState.websiteContent;
 
   return (
-    <div className="flex flex-1 relative">
+    <div className="flex flex-1 relative p-4 gap-4">
       {/* Left Panel */}
-      <div className="w-[420px] border-r bg-background flex flex-col z-10">
-        <div className="p-4 border-b">
-          <h2 className="font-headline text-lg font-semibold">Generate Website</h2>
-          <p className="text-xs text-muted-foreground mt-1">
+      <div className="w-[420px] flex flex-col z-10 rounded-2xl overflow-hidden shadow-2xl bg-white/95 backdrop-blur-sm border border-white/50">
+        {/* Panel header bar - orange→teal gradient */}
+        <div className="section-bar p-4">
+          <h2 className="font-headline text-lg font-bold text-white drop-shadow">🎨 Generate Website</h2>
+          <p className="text-xs text-white/80 mt-1">
             Create landing pages, portfolios, and static sites
           </p>
         </div>
 
         <div className="flex-1 p-4 space-y-5 overflow-y-auto">
-          {/* Templates */}
+          {/* Templates section header */}
           <div>
-            <h3 className="text-sm font-medium mb-2 font-headline">From a Template</h3>
+            <div className="section-bar rounded-xl px-3 py-2 mb-3 flex items-center gap-2">
+              <span className="text-white font-bold text-sm font-headline">📐 From a Template</span>
+            </div>
             <div className="grid grid-cols-2 gap-3">
               {websiteTemplates.map((template) => (
                 <Card
                   key={template.id}
-                  className={cn('cursor-pointer hover:shadow-lg transition-shadow', selectedTemplate === template.id && 'ring-2 ring-primary')}
+                  className={cn('cursor-pointer hover:shadow-xl transition-all hover:-translate-y-0.5 border-2', selectedTemplate === template.id ? 'ring-2 ring-orange-400 border-orange-300 shadow-orange-200 shadow-lg' : 'border-transparent')}
                   onClick={() => handleTemplateSelect(template)}
                 >
                   <CardContent className="p-0">
@@ -207,8 +210,8 @@ export default function Dashboard() {
           </div>
 
           <div className="relative">
-            <div className="absolute inset-0 flex items-center"><span className="w-full border-t"></span></div>
-            <div className="relative flex justify-center text-xs uppercase"><span className="bg-background px-2 text-muted-foreground">Or</span></div>
+            <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-teal-200"></span></div>
+            <div className="relative flex justify-center text-xs uppercase"><span className="bg-white px-3 text-teal-500 font-semibold">Or</span></div>
           </div>
 
           {/* Prompt Form */}
@@ -219,18 +222,20 @@ export default function Dashboard() {
             className="space-y-4"
           >
             <div>
-              <h3 className="text-sm font-medium mb-2 font-headline">From a Prompt</h3>
+              <div className="section-bar rounded-xl px-3 py-2 mb-3 flex items-center gap-2">
+                <span className="text-white font-bold text-sm font-headline">✏️ From a Prompt</span>
+              </div>
               <Textarea
                 name="prompt"
                 placeholder="e.g., A personal blog about cooking..."
-                className="min-h-[120px] text-sm"
+                className="min-h-[120px] text-sm border-teal-200 focus-visible:ring-orange-400"
                 value={prompt}
                 onChange={(e) => { setPrompt(e.target.value); setSelectedTemplate(null); }}
               />
             </div>
             <Button
               type="submit"
-              className="w-full"
+              className="w-full gradient-primary text-white font-bold shadow-lg hover:opacity-90 hover:shadow-xl transition-all hover:-translate-y-0.5 border-0"
               disabled={isPending || authLoading || !user}
               onClick={(e) => {
                 const storedUser = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
@@ -252,27 +257,27 @@ export default function Dashboard() {
 
       {/* Loading Overlay */}
       {isPending && (
-        <div className="fixed inset-0 z-[100] bg-gradient-to-br from-purple-50 via-purple-100/50 to-purple-200/30 dark:from-purple-950/80 dark:via-purple-900/60 dark:to-purple-950/80 backdrop-blur-md flex items-center justify-center">
+        <div className="fixed inset-0 z-[100] backdrop-blur-md flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(141,164,74,0.85) 0%, rgba(46,196,196,0.85) 100%)' }}>
           <div className="relative w-full max-w-lg mx-4">
             <div className="relative w-80 h-80 mx-auto">
-              <div className="absolute inset-0 rounded-full bg-gradient-to-br from-purple-200/40 via-purple-300/50 to-purple-400/60 dark:from-purple-800/30 dark:via-purple-700/40 dark:to-purple-600/50 animate-pulse"></div>
-              <div className="absolute inset-4 rounded-full bg-gradient-to-br from-purple-300/50 via-purple-400/60 to-purple-500/70 dark:from-purple-700/40 dark:via-purple-600/50 dark:to-purple-500/60 animate-pulse" style={{ animationDelay: '0.3s' }}></div>
-              <div className="absolute inset-12 rounded-full bg-gradient-to-br from-purple-400/40 via-purple-500/50 to-purple-600/60 dark:from-purple-600/30 dark:via-purple-500/40 dark:to-purple-700/50 blur-2xl"></div>
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-48 rounded-full bg-gradient-to-b from-purple-600/70 via-purple-700/80 to-purple-800/90 dark:from-purple-700/60 dark:via-purple-800/70 dark:to-purple-900/80 blur-sm transform -rotate-12"></div>
-              <div className="absolute top-6 left-10 w-20 h-24 rounded-full bg-purple-300/30 dark:bg-purple-500/20 blur-xl animate-bounce" style={{ animationDuration: '4s' }}></div>
-              <div className="absolute bottom-10 right-14 w-24 h-20 rounded-full bg-purple-400/30 dark:bg-purple-600/20 blur-xl animate-bounce" style={{ animationDuration: '5s', animationDelay: '1.5s' }}></div>
+              <div className="absolute inset-0 rounded-full bg-gradient-to-br from-orange-300/40 via-yellow-300/50 to-teal-400/60 animate-pulse"></div>
+              <div className="absolute inset-4 rounded-full bg-gradient-to-br from-orange-400/50 via-teal-300/60 to-teal-500/70 animate-pulse" style={{ animationDelay: '0.3s' }}></div>
+              <div className="absolute inset-12 rounded-full bg-gradient-to-br from-orange-400/40 via-teal-500/50 to-teal-600/60 blur-2xl"></div>
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-48 rounded-full bg-gradient-to-b from-orange-500/70 via-teal-500/80 to-teal-700/90 blur-sm transform -rotate-12"></div>
+              <div className="absolute top-6 left-10 w-20 h-24 rounded-full bg-orange-300/30 blur-xl animate-bounce" style={{ animationDuration: '4s' }}></div>
+              <div className="absolute bottom-10 right-14 w-24 h-20 rounded-full bg-teal-400/30 blur-xl animate-bounce" style={{ animationDuration: '5s', animationDelay: '1.5s' }}></div>
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 flex items-center justify-center z-10">
                 <div className="relative w-14 h-14 bg-white rounded-full flex items-center justify-center shadow-2xl">
-                  <Hourglass className="w-7 h-7 text-purple-600 dark:text-purple-500 animate-spin" style={{ animationDuration: '2s' }} />
+                  <Hourglass className="w-7 h-7 text-orange-500 animate-spin" style={{ animationDuration: '2s' }} />
                 </div>
-                <div className="absolute inset-0 rounded-full border-2 border-purple-400/50 dark:border-purple-500/50 animate-ping"></div>
+                <div className="absolute inset-0 rounded-full border-2 border-orange-400/50 animate-ping"></div>
               </div>
             </div>
             <div className="mt-10 text-center space-y-4">
-              <h3 className="font-headline text-3xl font-bold bg-gradient-to-r from-purple-600 to-purple-800 dark:from-purple-400 dark:to-purple-600 bg-clip-text text-transparent">
+              <h3 className="font-headline text-3xl font-bold text-white drop-shadow-lg">
                 Generando tu página web
               </h3>
-              <p className="text-base text-purple-700 dark:text-purple-300 font-medium">
+              <p className="text-base text-white/90 font-medium drop-shadow">
                 {generationStatus}
               </p>
             </div>
@@ -281,24 +286,25 @@ export default function Dashboard() {
       )}
 
       {/* Right Panel - Preview */}
-      <div className="flex-1 flex flex-col relative">
+      <div className="flex-1 flex flex-col relative rounded-2xl overflow-hidden shadow-2xl bg-white/95 backdrop-blur-sm border border-white/50">
         <Tabs defaultValue="preview" className="flex-1 flex flex-col">
-          <div className="border-b p-2 flex items-center justify-between">
-            <TabsList>
-              <TabsTrigger value="preview"><Eye className="mr-2" />Preview</TabsTrigger>
-              <TabsTrigger value="customize"><Code className="mr-2" />Customize</TabsTrigger>
+          <div className="section-bar p-2 px-3 flex items-center justify-between">
+            <TabsList className="bg-white/20 border border-white/30">
+              <TabsTrigger value="preview" className="data-[state=active]:bg-white data-[state=active]:text-orange-500 text-white font-medium"><Eye className="mr-2 h-4 w-4" />Preview</TabsTrigger>
+              <TabsTrigger value="customize" className="data-[state=active]:bg-white data-[state=active]:text-teal-500 text-white font-medium"><Code className="mr-2 h-4 w-4" />Customize</TabsTrigger>
             </TabsList>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={handleDownload} disabled={isPending}>
-                <Download className="mr-2" />Download
+              <Button variant="outline" size="sm" onClick={handleDownload} disabled={isPending} className="bg-white/20 border-white/40 text-white hover:bg-white/30 font-medium">
+                <Download className="mr-2 h-4 w-4" />Download
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setShowSaveDialog(true)}
                 disabled={!user || isDefaultContent || isPending}
+                className="bg-white/20 border-white/40 text-white hover:bg-white/30 font-medium"
               >
-                <Save className="mr-2" />Save Template
+                <Save className="mr-2 h-4 w-4" />Save Template
               </Button>
             </div>
           </div>
