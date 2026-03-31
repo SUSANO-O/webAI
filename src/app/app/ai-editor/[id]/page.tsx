@@ -87,9 +87,6 @@ export default function AIEditorPage() {
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   
-  // Publish dialog
-  const [showPublishDialog, setShowPublishDialog] = useState(false);
-  const [publishDomain, setPublishDomain] = useState('');
   const [isPublishing, setIsPublishing] = useState(false);
   
   // Preview state
@@ -374,31 +371,28 @@ Puedes pedirme cosas como:
   };
 
   const handlePublish = async () => {
-    if (!template || !publishDomain.trim()) return;
+    if (!template) return;
 
     setIsPublishing(true);
     try {
-      // First save the template - namespace: short id, code: HTML
       await apiService.updateTemplate(template.id, {
         name: template.name,
         emailDesigner: template.emailDesigner,
         namespace: toShortNamespace(template.name),
         code: currentCode,
         email: template.email,
-        hidden: template.hidden,
+        hidden: false,
       });
 
-      // Here you would integrate with your domain/hosting service
-      // For now, we'll simulate the publish process
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      setOriginalCode(currentCode);
+
+      const siteUrl = `${window.location.origin}/view-template/${template.id}`;
+      await navigator.clipboard.writeText(siteUrl).catch(() => {});
 
       toast({
         title: 'Sitio publicado',
-        description: `Tu sitio está disponible en: ${publishDomain}`,
+        description: `URL copiada: ${siteUrl}`,
       });
-
-      setShowPublishDialog(false);
-      setPublishDomain('');
     } catch (error) {
       console.error('Error publishing:', error);
       toast({
@@ -680,10 +674,12 @@ Puedes pedirme cosas como:
               Guardar
             </Button>
             <Button
-              onClick={() => setShowPublishDialog(true)}
+              onClick={handlePublish}
+              disabled={isPublishing}
               className="bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700"
+              size="sm"
             >
-              <Globe className="mr-1 h-4 w-4" />
+              {isPublishing ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Globe className="mr-1 h-4 w-4" />}
               Publicar
             </Button>
           </div>
@@ -1061,69 +1057,6 @@ Puedes pedirme cosas como:
         </DialogContent>
       </Dialog>
 
-      {/* Publish Dialog */}
-      <Dialog open={showPublishDialog} onOpenChange={setShowPublishDialog}>
-        <DialogContent className="bg-gray-900 border-gray-800 text-white">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Globe className="h-5 w-5 text-purple-400" />
-              Publicar Sitio Web
-            </DialogTitle>
-            <DialogDescription className="text-gray-400">
-              Publica tu template como un sitio web completo
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-300">
-                Dominio / Subdominio
-              </label>
-              <Input
-                value={publishDomain}
-                onChange={(e) => setPublishDomain(e.target.value)}
-                placeholder="mi-sitio.tudominio.com"
-                className="bg-gray-800 border-gray-700 text-white"
-              />
-            </div>
-            <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-              <h4 className="text-sm font-medium text-white mb-2">El sitio incluirá:</h4>
-              <ul className="text-sm text-gray-400 space-y-1">
-                <li>✓ Estructura HTML completa</li>
-                <li>✓ Estilos Tailwind CSS optimizados</li>
-                <li>✓ JavaScript funcional</li>
-                <li>✓ Diseño responsive</li>
-                <li>✓ Imágenes optimizadas</li>
-              </ul>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowPublishDialog(false)}
-              className="border-gray-700 text-gray-300"
-            >
-              Cancelar
-            </Button>
-            <Button
-              onClick={handlePublish}
-              disabled={!publishDomain.trim() || isPublishing}
-              className="bg-gradient-to-r from-purple-600 to-pink-600"
-            >
-              {isPublishing ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Publicando...
-                </>
-              ) : (
-                <>
-                  <Globe className="mr-2 h-4 w-4" />
-                  Publicar Ahora
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

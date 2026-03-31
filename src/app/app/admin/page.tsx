@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { apiService, toShortNamespace, type Template } from '@/lib/api';
-import { Loader2, Edit, Trash2, Eye, Copy, CheckCircle2, RefreshCw, Share2, ExternalLink, Sparkles, Wand2 } from 'lucide-react';
+import { Loader2, Edit, Trash2, CheckCircle2, RefreshCw, Sparkles } from 'lucide-react';
 
 export default function AdminPage() {
   const { user, loading: authLoading } = useAuth();
@@ -25,7 +25,6 @@ export default function AdminPage() {
   const [editCode, setEditCode] = useState('');
   const [saving, setSaving] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
-  const [copiedId, setCopiedId] = useState<number | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -155,7 +154,7 @@ export default function AdminPage() {
   };
 
   const handleShareTemplate = async (template: Template) => {
-    const shareUrl = `${window.location.origin}/app/view-template/${template.id}`;
+    const shareUrl = `${window.location.origin}/view-template/${template.id}`;
     try {
       await navigator.clipboard.writeText(shareUrl);
       toast({
