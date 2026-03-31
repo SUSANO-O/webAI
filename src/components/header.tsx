@@ -25,7 +25,7 @@ export function Header() {
           className="flex items-center gap-2 text-lg font-semibold md:text-base"
         >
           <AppIcon />
-          <span className="font-headline font-bold text-xl text-white drop-shadow">AI Website</span>
+          <span className="font-headline font-bold text-xl text-white drop-shadow">Web AI</span>
         </Link>
         <Link
           href="/app"

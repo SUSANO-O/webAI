@@ -9,12 +9,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { apiService, toShortNamespace, type Template } from '@/lib/api';
 import { 
-  Loader2, 
-  Send, 
-  ArrowLeft, 
-  Download, 
-  Save, 
-  Check, 
+  Loader2,
+  Send,
+  ArrowLeft,
+  Download,
+  Save,
+  Check,
   X,
   Sparkles,
   MessageSquare,
@@ -29,6 +29,9 @@ import {
   FileUp,
   Mic,
   MicOff,
+  Images,
+  RefreshCw,
+  Upload,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -105,6 +108,16 @@ export default function AIEditorPage() {
   const [isDescribingImage, setIsDescribingImage] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
+
+  // Image editor state
+  interface TemplateImage {
+    src: string;
+    tag: string;
+    idx: number;
+  }
+  const [templateImages, setTemplateImages] = useState<TemplateImage[]>([]);
+  const [replacingImageIdx, setReplacingImageIdx] = useState<number | null>(null);
+  const imageReplaceInputRef = useRef<HTMLInputElement>(null);
 
   // Auto-scroll chat
   const scrollToBottom = () => {
@@ -507,6 +520,89 @@ Puedes pedirme cosas como:
     toast({ title: 'Escuchando...', description: 'Habla y tu voz se transcribirá' });
   };
 
+  // Extract <img> tags and CSS background-image from HTML
+  const extractImagesFromCode = (html: string): TemplateImage[] => {
+    const results: TemplateImage[] = [];
+    let idx = 0;
+
+    // 1. <img src="..."> tags
+    const imgRegex = /<img([^>]*?)>/gi;
+    let match;
+    while ((match = imgRegex.exec(html)) !== null) {
+      const srcMatch = /src=["']([^"']+)["']/i.exec(match[0]);
+      if (srcMatch) {
+        results.push({ src: srcMatch[1], tag: match[0], idx: idx++ });
+      }
+    }
+
+    // 2. Inline style background-image: url(...)
+    const inlineStyleRegex = /style=["'][^"']*background-image\s*:\s*url\(['"]?([^'")\s]+)['"]?\)[^"']*["']/gi;
+    while ((match = inlineStyleRegex.exec(html)) !== null) {
+      const src = match[1];
+      if (src && !results.some(r => r.src === src)) {
+        results.push({ src, tag: match[0], idx: idx++ });
+      }
+    }
+
+    return results;
+  };
+
+  // Replace a specific image src in the HTML (handles both <img> and inline CSS)
+  const replaceImageInCode = (html: string, oldSrc: string, newSrc: string): string => {
+    const escaped = oldSrc.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // Replace in <img src="...">
+    let result = html.replace(
+      new RegExp(`(<img[^>]+src=["'])${escaped}(["'][^>]*>)`, 'gi'),
+      `$1${newSrc}$2`
+    );
+    // Replace in inline style background-image
+    result = result.replace(
+      new RegExp(`(background-image\\s*:\\s*url\\(['"]?)${escaped}(['"]?\\))`, 'gi'),
+      `$1${newSrc}$2`
+    );
+    return result;
+  };
+
+  const handleOpenImageEditor = () => {
+    const imgs = extractImagesFromCode(currentCode);
+    setTemplateImages(imgs);
+  };
+
+  const handleReplaceImage = (imgIdx: number) => {
+    setReplacingImageIdx(imgIdx);
+    imageReplaceInputRef.current?.click();
+  };
+
+  const handleImageReplaceUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || replacingImageIdx === null) return;
+    if (!file.type.startsWith('image/')) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Solo se permiten imágenes' });
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      const img = templateImages[replacingImageIdx];
+      if (!img) return;
+
+      const newCode = replaceImageInCode(currentCode, img.src, dataUrl);
+      // Add to history
+      const newHistory = history.slice(0, historyIndex + 1);
+      newHistory.push({ code: newCode, message: `Imagen reemplazada`, timestamp: new Date() });
+      setHistory(newHistory);
+      setHistoryIndex(newHistory.length - 1);
+      setCurrentCode(newCode);
+
+      // Refresh image list
+      setTemplateImages(extractImagesFromCode(newCode));
+      toast({ title: 'Imagen reemplazada', description: 'La imagen fue actualizada en el template' });
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+    setReplacingImageIdx(null);
+  };
+
   const hasUnsavedChanges = currentCode !== originalCode;
 
   if (authLoading || loading || !user) {
@@ -682,6 +778,13 @@ Puedes pedirme cosas como:
               className="hidden"
               onChange={handleFileUpload}
             />
+            <input
+              ref={imageReplaceInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleImageReplaceUpload}
+            />
             <div className="flex gap-2">
               <Textarea
                 ref={inputRef}
@@ -785,6 +888,14 @@ Puedes pedirme cosas como:
                   <History className="mr-2 h-4 w-4" />
                   Historial ({history.length})
                 </TabsTrigger>
+                <TabsTrigger
+                  value="images"
+                  className="data-[state=active]:bg-purple-600"
+                  onClick={handleOpenImageEditor}
+                >
+                  <Images className="mr-2 h-4 w-4" />
+                  Imágenes
+                </TabsTrigger>
               </TabsList>
             </div>
             
@@ -803,6 +914,65 @@ Puedes pedirme cosas como:
                 onChange={(e) => setCurrentCode(e.target.value)}
                 className="w-full h-full resize-none border-0 rounded-none bg-[#1a1a2e] text-gray-300 font-mono text-xs p-4 focus-visible:ring-0"
               />
+            </TabsContent>
+
+            <TabsContent value="images" className="flex-1 m-0 overflow-auto bg-gray-900 p-4">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                  <Images className="h-4 w-4 text-purple-400" />
+                  Imágenes del template
+                </h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-gray-400 hover:text-purple-400"
+                  onClick={handleOpenImageEditor}
+                  title="Actualizar lista"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+              </div>
+              {templateImages.length === 0 ? (
+                <div className="text-center text-gray-500 text-sm py-8">
+                  No se encontraron imágenes en el template.
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-3">
+                  {templateImages.map((img, i) => (
+                    <div key={i} className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+                      <div className="aspect-video bg-gray-900 flex items-center justify-center overflow-hidden">
+                        {img.src.startsWith('http') || img.src.startsWith('data:') ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={img.src}
+                            alt={`Imagen ${i + 1}`}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = 'none';
+                            }}
+                          />
+                        ) : (
+                          <Images className="h-8 w-8 text-gray-600" />
+                        )}
+                      </div>
+                      <div className="p-2">
+                        <p className="text-xs text-gray-400 truncate mb-2" title={img.src}>
+                          {img.src.startsWith('data:') ? '[imagen base64]' : img.src}
+                        </p>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="w-full text-xs border-purple-600/50 text-purple-400 hover:bg-purple-600/20"
+                          onClick={() => handleReplaceImage(i)}
+                        >
+                          <Upload className="h-3 w-3 mr-1" />
+                          Reemplazar
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </TabsContent>
 
             <TabsContent value="history" className="flex-1 m-0 overflow-auto bg-gray-900 p-4">

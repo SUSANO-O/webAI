@@ -96,9 +96,16 @@ User Prompt: {{{prompt}}}
 3.  **Styling (Tailwind CSS):**
     *   You MUST use Tailwind CSS utility classes directly in the HTML for all styling. Do not use \`<style>\` blocks or inline \`style\` attributes.
     *   The design should be modern, visually appealing, and fully responsive. Use flexbox and grid for layouts.
-    *   Use placeholder images from 'https://picsum.photos/seed/{seed}/{width}/{height}' where appropriate.
 
-4.  **Color Palette:**
+4.  **Images (CRITICAL - read carefully):**
+    *   ALL images MUST use \`<img>\` HTML tags. NEVER use CSS \`background-image\` for content images.
+    *   Every \`<img>\` tag MUST have the attribute \`data-editable="true"\` so users can replace them later.
+    *   Use placeholder images from \`https://picsum.photos/seed/{keyword}/{width}/{height}\` (e.g., \`https://picsum.photos/seed/hero/1200/600\`).
+    *   For profile/avatar images use \`https://picsum.photos/seed/person1/400/400\`.
+    *   Example: \`<img src="https://picsum.photos/seed/hero/1200/600" alt="Hero image" data-editable="true" class="w-full h-full object-cover">\`
+    *   Include images for: hero backgrounds, profile photos, product shots, gallery items, team members, etc.
+
+5.  **Color Palette:**
     *   Generate a cohesive color palette (primary, background, accent) in HSL string format (e.g., "210 40% 96.1%").
     *   Apply Tailwind color classes directly in the HTML (e.g., \`bg-blue-500\`). Do not use CSS variables.
 

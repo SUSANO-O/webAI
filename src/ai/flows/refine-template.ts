@@ -102,7 +102,9 @@ Your task is to take an existing HTML template and apply modifications based on 
 **Important Rules:**
 - Keep using Tailwind CSS utility classes for styling
 - Preserve working JavaScript functionality unless asked to change it
-- Keep placeholder images from 'https://picsum.photos/seed/{seed}/{width}/{height}'
+- **Images (CRITICAL):** ALL images MUST use \`<img>\` HTML tags with \`data-editable="true"\` attribute. NEVER use CSS \`background-image\` for content images. Use \`https://picsum.photos/seed/{keyword}/{width}/{height}\` for new placeholder images.
+- When adding new images always use: \`<img src="https://picsum.photos/seed/{keyword}/{width}/{height}" alt="..." data-editable="true" class="...">\`
+- If existing images use \`background-image\` CSS, convert them to proper \`<img>\` tags with \`data-editable="true"\`
 - If adding new sections, maintain consistent styling with existing ones
 - If the user asks for something unclear, make reasonable assumptions and note them in suggestions
 
