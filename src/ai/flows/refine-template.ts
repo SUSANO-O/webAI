@@ -93,29 +93,32 @@ Your task is to take an existing HTML template and apply modifications based on 
 
 **Instructions:**
 
-1. **Analyze** the current template code carefully
-2. **Understand** what the user wants to change based on their feedback
-3. **Apply** ONLY the requested changes - do not make unnecessary modifications
-4. **Preserve** the overall structure, styling approach (Tailwind CSS), and functionality
-5. **Maintain** responsive design and accessibility features
+1. **Read** the user request carefully and identify the EXACT elements to change
+2. **Locate** the specific HTML elements, classes, or sections mentioned
+3. **Apply** ONLY the minimum necessary changes — do not restructure or rewrite anything not explicitly requested
+4. **Preserve** 100% of the rest: all other sections, text, classes, IDs, scripts, layout, colors
 
-**Important Rules:**
+**CRITICAL — Surgical editing rules:**
+- If the user says "change the header color", only change the header background class. Nothing else.
+- If the user says "make the button bigger", only change that button's size classes. Nothing else.
+- If the user says "add a testimonials section", add only that section. Do NOT touch hero, nav, footer, or any other section.
+- NEVER rewrite the whole page for a partial request. This is the most important rule.
+- Count the lines you changed — if more than 30% of the file changed for a small request, you went too far.
 - Keep using Tailwind CSS utility classes for styling
-- Preserve working JavaScript functionality unless asked to change it
-- **Images (CRITICAL):** ALL images MUST use \`<img>\` HTML tags with \`data-editable="true"\` attribute. NEVER use CSS \`background-image\` for content images. Use \`https://picsum.photos/seed/{keyword}/{width}/{height}\` for new placeholder images.
-- When adding new images always use: \`<img src="https://picsum.photos/seed/{keyword}/{width}/{height}" alt="..." data-editable="true" class="...">\`
-- If existing images use \`background-image\` CSS, convert them to proper \`<img>\` tags with \`data-editable="true"\`
-- If adding new sections, maintain consistent styling with existing ones
-- If the user asks for something unclear, make reasonable assumptions and note them in suggestions
+- Preserve all working JavaScript unless explicitly asked to modify it
+- **Images (CRITICAL):** ALL images MUST use \`<img>\` tags with \`data-editable="true"\`. NEVER CSS \`background-image\`. Use \`https://picsum.photos/seed/{keyword}/{width}/{height}\` for new placeholders.
+- When adding new images: \`<img src="https://picsum.photos/seed/{keyword}/{width}/{height}" alt="..." data-editable="true" class="...">\`
+- If existing images use \`background-image\` CSS, convert them to \`<img data-editable="true">\`
+- If adding new sections, match the visual style (colors, spacing, border-radius) of existing sections
 
 **Output Format:**
 
 Return a JSON object with:
-1. \`refinedCode\`: The complete modified HTML code
-2. \`changesSummary\`: A brief description of what was changed (in Spanish)
-3. \`suggestions\`: Optional array of suggestions for further improvements (in Spanish)
+1. \`refinedCode\`: The complete HTML with ONLY the requested changes applied
+2. \`changesSummary\`: A brief description of exactly what was changed (in Spanish)
+3. \`suggestions\`: Optional 2-3 short follow-up ideas the user might want next (in Spanish)
 
-Be precise and efficient - the user wants to iterate quickly.
+Be precise — the user wants surgical edits, not rewrites.
 `,
 });
 

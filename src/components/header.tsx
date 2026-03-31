@@ -25,7 +25,7 @@ export function Header() {
           className="flex items-center gap-2 text-lg font-semibold md:text-base"
         >
           <AppIcon />
-          <span className="font-headline font-bold text-xl text-white drop-shadow">Web AI</span>
+          <span className="font-headline font-bold text-xl text-white drop-shadow">Website AI</span>
         </Link>
         <Link
           href="/app"
@@ -33,7 +33,7 @@ export function Header() {
         >
           Dashboard
         </Link>
-        {user && (
+          {user?.role === 'admin' && (
           <Link
             href="/app/admin"
             className="text-white/70 font-medium transition-colors hover:text-white"

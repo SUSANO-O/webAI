@@ -6,7 +6,7 @@ import { generateApp } from '@/ai/flows/generate-app-from-prompt';
 // ─── Website Generation Action ─────────────────────────────────────
 
 export async function generateWebsiteAction(
-  prevState: { websiteContent: string; error: string | null },
+  prevState: { websiteContent: string; error: string | null; usedFallback?: boolean },
   formData: FormData
 ) {
   const prompt = formData.get('prompt') as string;
@@ -21,12 +21,13 @@ export async function generateWebsiteAction(
     
     if (result?.websiteContent) {
       console.log('✅ [generateWebsiteAction] Sitio web generado exitosamente');
-      return { websiteContent: result.websiteContent, error: null };
+      return { websiteContent: result.websiteContent, error: null, usedFallback: false };
     } else {
       console.warn('⚠️ [generateWebsiteAction] Respuesta vacía o inválida del AI');
       return {
         websiteContent: prevState.websiteContent,
         error: 'The AI returned an empty or invalid response. Please try again.',
+        usedFallback: false,
       };
     }
   } catch (e: unknown) {
@@ -52,20 +53,22 @@ export async function generateWebsiteAction(
         const fallbackResult = await generateWebsiteWithHuggingFace({ prompt });
         if (fallbackResult?.websiteContent) {
           console.log('✅ [generateWebsiteAction] Fallback exitoso');
-          return { websiteContent: fallbackResult.websiteContent, error: null };
+          return { websiteContent: fallbackResult.websiteContent, error: null, usedFallback: true };
         }
       } catch (fallbackError) {
         console.error('❌ [generateWebsiteAction] Fallback falló:', fallbackError);
         return {
           websiteContent: prevState.websiteContent,
           error: `Gemini failed (${errorMessage}) and Hugging Face fallback also failed. Please check your API keys.`,
+          usedFallback: false,
         };
       }
     }
-    
+
     return {
       websiteContent: prevState.websiteContent,
       error: `Failed to generate website: ${errorMessage}`,
+      usedFallback: false,
     };
   }
 }

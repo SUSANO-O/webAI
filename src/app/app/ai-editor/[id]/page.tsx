@@ -848,12 +848,12 @@ Puedes pedirme cosas como:
                 </Badge>
               )}
             </div>
-            <div className="flex gap-2 mt-2">
+            <div className="flex gap-2 mt-2 flex-wrap">
               <Button
                 variant="ghost"
                 size="sm"
                 className="text-xs text-gray-500 hover:text-purple-400"
-                onClick={() => applySuggestion('Mejora los colores y el diseño')}
+                onClick={() => applySuggestion('Mejora los colores y el diseño general')}
               >
                 <Zap className="h-3 w-3 mr-1" />
                 Mejorar diseño
@@ -867,6 +867,22 @@ Puedes pedirme cosas como:
                 <Sparkles className="h-3 w-3 mr-1" />
                 Modernizar
               </Button>
+            </div>
+            {/* Section regeneration quick actions */}
+            <div className="mt-2">
+              <p className="text-[10px] text-gray-600 mb-1 uppercase tracking-wide">Regenerar sección:</p>
+              <div className="flex flex-wrap gap-1">
+                {['Hero', 'Navbar', 'Features', 'Testimonios', 'Precios', 'CTA', 'Footer'].map((section) => (
+                  <button
+                    key={section}
+                    onClick={() => applySuggestion(`Regenera SOLO la sección "${section}" con un diseño más impactante y profesional. No toques ninguna otra sección.`)}
+                    disabled={isProcessing}
+                    className="text-[10px] px-2 py-0.5 rounded-full bg-gray-800 text-gray-400 hover:bg-purple-900/50 hover:text-purple-300 border border-gray-700 hover:border-purple-600 transition-colors"
+                  >
+                    {section}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </div>

@@ -34,52 +34,51 @@ export async function generateWebsiteWithHuggingFace(
 
   console.log('🤖 [HuggingFace] Iniciando generación con Hugging Face SDK...');
 
-  const systemPrompt = `You are an expert web designer and developer AI. Your task is to generate a complete, single-page landing page based on a user's prompt. The output must be a single HTML file using Tailwind CSS for styling and include functional JavaScript.
+  const systemPrompt = `You are a world-class expert in web layout, UI/UX design, and front-end development with 15+ years of experience building high-converting landing pages for Fortune 500 companies. You have deep mastery of visual hierarchy, typography, color theory, whitespace, and responsive grid systems. Your designs are pixel-perfect, visually stunning, and follow modern design trends (glassmorphism, neumorphism, bold gradients, micro-interactions).
 
-**Website Requirements:**
+Your task is to generate a complete, single-page landing page based on the user's prompt. Output must be a single HTML file using Tailwind CSS and functional JavaScript.
 
-1. **Structure:**
-   - Create a well-structured landing page with semantic HTML5 tags (<header>, <nav>, <main>, <section>, <footer>).
-   - It must include a hero section, a features section, and a footer at a minimum. Add other relevant sections (e.g., about, contact, testimonials) if they fit the prompt.
-   - Ensure all sections have unique id attributes to allow for anchor link navigation (e.g., <section id="features">...).
+**Layout & Design Standards (MANDATORY):**
 
-2. **Content:**
-   - Generate relevant and engaging marketing copy for all sections based on the user's prompt.
+1. **Visual Hierarchy:**
+   - Use a clear typographic scale: display headings (text-5xl/6xl), section titles (text-3xl/4xl), body (text-base/lg).
+   - Apply generous whitespace (py-20, py-24 for sections) to breathe and avoid cramped layouts.
+   - Create visual contrast using bold backgrounds, gradient overlays, and accent colors.
 
-3. **Styling (Tailwind CSS):**
-   - You MUST use Tailwind CSS utility classes directly in the HTML for all styling. Do not use <style> blocks or inline style attributes.
-   - The design should be modern, visually appealing, and fully responsive. Use flexbox and grid for layouts.
-   - Use placeholder images from 'https://picsum.photos/seed/{seed}/{width}/{height}' where appropriate.
+2. **Structure:**
+   - Semantic HTML5: <header>, <nav>, <main>, <section id="...">, <footer>.
+   - Mandatory sections: sticky navigation, hero (full viewport height), features/benefits, social proof or stats, CTA, footer.
+   - Add sections that fit the prompt: testimonials, pricing, team, gallery, FAQ, etc.
 
-4. **Color Palette:**
-   - Generate a cohesive color palette (primary, background, accent) in HSL string format (e.g., "210 40% 96.1%").
-   - Apply Tailwind color classes directly in the HTML (e.g., bg-blue-500). Do not use CSS variables.
+3. **Styling (Tailwind CSS ONLY):**
+   - Use Tailwind utility classes exclusively. NO <style> blocks, NO inline style attributes.
+   - Hero section must use a dramatic gradient background (e.g., from-slate-900 via-purple-900 to-slate-900).
+   - Cards must have hover effects: hover:scale-105, hover:shadow-2xl, transition-all duration-300.
+   - Use rounded-2xl, shadow-xl on cards. Buttons must be large, bold, with gradient backgrounds and hover:opacity-90.
+   - Fully responsive: use responsive prefixes (sm:, md:, lg:, xl:) on all grid/flex layouts.
 
-5. **JavaScript (Functionality):**
-   - Include a single <script> tag at the end of the <body>.
-   - **Smooth Scrolling:** Implement JavaScript for smooth scrolling when a navigation link (e.g., <a href="#features">...) is clicked.
-   - **Form Submission Simulation:** If you include a contact form, add a JavaScript event listener to it. On submission, it should prevent the default form submission, get the form data, and log it to the console using console.log().
-   - **Functional Links:** All internal navigation links MUST point to section IDs (e.g., href="#contact") and all external links should point to "#" for demonstration purposes.
+4. **Images (CRITICAL):**
+   - ALL images MUST use <img> tags with data-editable="true" attribute.
+   - NEVER use CSS background-image. Use <img> tags only.
+   - Use: https://picsum.photos/seed/{keyword}/{width}/{height} (e.g., https://picsum.photos/seed/hero/1200/600).
+   - Include images in hero, cards, testimonials, team sections.
 
-**Output Format:**
+5. **Color Palette:**
+   - Pick a cohesive, professional palette. Return HSL strings (e.g., "262 83% 58%").
+   - Apply colors through Tailwind classes (bg-purple-600, text-emerald-400, etc.).
 
-Return ONLY a valid JSON object with two keys:
-1. "websiteContent": A string containing the full HTML and JavaScript of the generated landing page.
-2. "palette": An object with "primary", "background", and "accent" color strings in HSL format.
+6. **JavaScript:**
+   - Single <script> at end of <body>.
+   - Smooth scrolling for nav links, mobile menu toggle, form validation with console.log().
+   - Add subtle scroll animations using IntersectionObserver if appropriate.
 
-Example format:
-{
-  "websiteContent": "<!DOCTYPE html>...",
-  "palette": {
-    "primary": "210 40% 96.1%",
-    "background": "0 0% 100%",
-    "accent": "210 40% 50%"
-  }
-}`;
+**Output Format — CRITICAL:**
+Return ONLY a valid JSON object. No explanation, no markdown, no code fences. Just the raw JSON:
+{"websiteContent":"<!DOCTYPE html>...complete HTML here...","palette":{"primary":"262 83% 58%","background":"224 71% 4%","accent":"142 76% 36%"}}`;
 
   const userPrompt = `User Prompt: ${input.prompt}
 
-Generate the website now. Return ONLY the JSON object, no other text.`;
+IMPORTANT: Return ONLY the raw JSON object. Start your response with { and end with }. No other text before or after.`;
 
   try {
     // Usar el SDK oficial de Hugging Face
@@ -201,53 +200,106 @@ Generate the website now. Return ONLY the JSON object, no other text.`;
   }
 }
 
+/** Convierte JSON string escapes a sus caracteres reales.
+ *  Necesario cuando extraemos HTML crudo desde dentro de un JSON truncado:
+ *  \" → "   \n → newline   \t → tab   \/ → /   \\ → \
+ */
+function unescapeJsonString(s: string): string {
+  return s
+    .replace(/\\"/g, '"')
+    .replace(/\\n/g, '\n')
+    .replace(/\\r/g, '\r')
+    .replace(/\\t/g, '\t')
+    .replace(/\\\//g, '/')
+    .replace(/\\\\/g, '\\');
+}
+
+const DEFAULT_PALETTE = {
+  primary: '36 92% 52%',
+  background: '0 0% 100%',
+  accent: '180 55% 45%',
+};
+
 /**
- * Parsea la respuesta de Hugging Face API
+ * Parsea la respuesta de Hugging Face API.
+ * Usa múltiples estrategias en cascada porque los modelos truncan JSON
+ * (bloques <think> consumen tokens, el JSON queda sin cerrar).
  */
 function parseHuggingFaceResponse(data: any): GenerateWebsiteOutput {
-  // El SDK de Hugging Face devuelve directamente el texto generado
-  let generatedText = '';
+  // 1. Extraer texto generado
+  let raw = '';
   if (data.generated_text) {
-    generatedText = data.generated_text;
+    raw = data.generated_text;
   } else if (typeof data === 'string') {
-    generatedText = data;
+    raw = data;
   } else if (Array.isArray(data) && data[0]?.generated_text) {
-    generatedText = data[0].generated_text;
+    raw = data[0].generated_text;
   } else {
-    console.error('❌ [HuggingFace] Formato de respuesta inesperado:', data);
     throw new Error('Unexpected response format from Hugging Face API');
   }
 
-  // DeepSeek-R1 puede incluir bloques de razonamiento entre <think>...</think>
-  // Removemos estos bloques para extraer solo la respuesta final
-  generatedText = generatedText.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+  // 2. Quitar bloques <think>...</think> (Qwen3, DeepSeek-R1)
+  raw = raw.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
 
-  // Remove markdown code blocks if present
-  generatedText = generatedText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+  // 3. Quitar markdown fences
+  raw = raw.replace(/^```json\s*/i, '').replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
 
-  // Try to find JSON object in the response
-  const jsonMatch = generatedText.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) {
-    console.error('❌ [HuggingFace] No JSON encontrado en la respuesta:', generatedText.substring(0, 500));
-    throw new Error('No JSON object found in Hugging Face response');
-  }
-
+  // ── Estrategia A: JSON.parse directo ─────────────────────────
   try {
-    const parsed = JSON.parse(jsonMatch[0]);
-
-    if (!parsed.websiteContent || !parsed.palette) {
-      console.error('❌ [HuggingFace] Formato inválido:', parsed);
-      throw new Error('Invalid response format from Hugging Face API - missing websiteContent or palette');
+    const p = JSON.parse(raw);
+    if (p?.websiteContent) {
+      console.log('✅ [HuggingFace] Parseado con estrategia A (JSON directo)');
+      return { websiteContent: p.websiteContent, palette: p.palette || DEFAULT_PALETTE };
     }
+  } catch { /* continúa */ }
 
-    console.log('✅ [HuggingFace] Respuesta parseada exitosamente');
-    return {
-      websiteContent: parsed.websiteContent,
-      palette: parsed.palette,
-    };
-  } catch (parseError) {
-    console.error('❌ [HuggingFace] Error al parsear JSON:', parseError);
-    throw new Error(`Failed to parse JSON from Hugging Face response: ${parseError instanceof Error ? parseError.message : 'Unknown error'}`);
+  // ── Estrategia B: buscar primer { y último } ──────────────────
+  const firstBrace = raw.indexOf('{');
+  if (firstBrace !== -1) {
+    let lastBrace = raw.lastIndexOf('}');
+    while (lastBrace > firstBrace) {
+      try {
+        const candidate = raw.substring(firstBrace, lastBrace + 1);
+        const p = JSON.parse(candidate);
+        if (p?.websiteContent) {
+          console.log('✅ [HuggingFace] Parseado con estrategia B (recorte JSON)');
+          return { websiteContent: p.websiteContent, palette: p.palette || DEFAULT_PALETTE };
+        }
+      } catch { /* probar con } anterior */ }
+      lastBrace = raw.lastIndexOf('}', lastBrace - 1);
+    }
   }
+
+  // ── Estrategia C: JSON truncado — extraer HTML directamente ───
+  // El modelo generó JSON pero se cortó antes del cierre. Extraemos
+  // el valor de "websiteContent" leyendo desde la primera < hasta </html>,
+  // luego desescapamos los escape sequences de JSON (\", \\n, \\t, etc.)
+  const keyIdx = raw.search(/"websiteContent"\s*:/);
+  if (keyIdx !== -1) {
+    const afterColon = raw.indexOf(':', keyIdx) + 1;
+    const htmlStart = raw.indexOf('<', afterColon);
+    if (htmlStart !== -1) {
+      const htmlEnd = raw.search(/<\/html\s*>/i);
+      let htmlContent = htmlEnd !== -1
+        ? raw.substring(htmlStart, htmlEnd + 7)   // incluye </html>
+        : raw.substring(htmlStart);               // hasta el final si no hay cierre
+      // Desescapar JSON string escapes que quedaron en el HTML crudo
+      htmlContent = unescapeJsonString(htmlContent);
+      if (htmlContent.length > 100) {
+        console.log('✅ [HuggingFace] Parseado con estrategia C (extracción HTML de JSON truncado)');
+        return { websiteContent: htmlContent, palette: DEFAULT_PALETTE };
+      }
+    }
+  }
+
+  // ── Estrategia D: la respuesta ya ES HTML (modelo ignoró JSON) ─
+  const trimmed = raw.trim();
+  if (/^<!doctype|^<html/i.test(trimmed)) {
+    console.log('✅ [HuggingFace] Parseado con estrategia D (HTML directo)');
+    return { websiteContent: trimmed, palette: DEFAULT_PALETTE };
+  }
+
+  console.error('❌ [HuggingFace] Todas las estrategias fallaron. Preview (500 chars):', raw.substring(0, 500));
+  throw new Error('No se pudo extraer websiteContent de la respuesta de Hugging Face');
 }
 
