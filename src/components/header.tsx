@@ -33,12 +33,12 @@ export function Header() {
         >
           Dashboard
         </Link>
-          {user?.role === 'admin' && (
+        {user && (
           <Link
             href="/app/admin"
             className="text-white/70 font-medium transition-colors hover:text-white"
           >
-            Admin
+            Mis Templates
           </Link>
         )}
       </nav>

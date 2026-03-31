@@ -43,7 +43,10 @@ export default function AdminPage() {
     try {
       setLoading(true);
       const data = await apiService.getTemplates();
-      setTemplates(data);
+      const mine = data.filter(
+        t => t.email === user?.email || t.emailDesigner === user?.email
+      );
+      setTemplates(mine);
     } catch (error) {
       console.error('Error loading templates:', error);
       toast({
