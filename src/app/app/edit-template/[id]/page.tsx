@@ -3,15 +3,50 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
+import Editor from '@monaco-editor/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { apiService, toShortNamespace, type Template } from '@/lib/api';
 import { Loader2, Save, Eye, ArrowLeft, Download, Share2, Code } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
+
+function formatHtmlForEditor(rawHtml: string): string {
+  const source = rawHtml.trim();
+  if (!source) return '';
+  if (source.includes('\n') || source.length < 800) return source;
+
+  const voidTags = new Set([
+    'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta',
+    'param', 'source', 'track', 'wbr', '!doctype',
+  ]);
+
+  const tokens = source.replace(/>\s*</g, '><').replace(/></g, '>\n<').split('\n');
+  let indent = 0;
+
+  return tokens
+    .map((line) => {
+      const token = line.trim();
+      const isClosingTag = /^<\//.test(token);
+      const tagMatch = token.match(/^<\/?([a-zA-Z0-9!:-]+)/);
+      const tagName = tagMatch?.[1]?.toLowerCase() ?? '';
+      const isSelfClosing = /\/>$/.test(token) || voidTags.has(tagName) || /^<!/.test(token);
+
+      if (isClosingTag) {
+        indent = Math.max(indent - 1, 0);
+      }
+
+      const formatted = `${'  '.repeat(indent)}${token}`;
+
+      if (!isClosingTag && !isSelfClosing && /^<[^/!][^>]*>$/.test(token)) {
+        indent += 1;
+      }
+
+      return formatted;
+    })
+    .join('\n');
+}
 
 export default function EditTemplatePage() {
   const { user, loading: authLoading } = useAuth();
@@ -46,7 +81,7 @@ export default function EditTemplatePage() {
       if (found) {
         setTemplate(found);
         setName(found.name);
-        setCode(found.code || '');
+        setCode(formatHtmlForEditor(found.code || ''));
       } else {
         toast({
           variant: 'destructive',
@@ -206,13 +241,10 @@ export default function EditTemplatePage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-code">Código HTML</Label>
-              <Textarea
-                id="edit-code"
-                value={code}
-                onChange={(e) => setCode(e.target.value)}
-                className="min-h-[400px] font-mono text-xs"
-              />
+              <Label>Editor de Código</Label>
+              <p className="text-xs text-muted-foreground">
+                Usa la pestaña "Código" para editar con Monaco (estilo VS Code).
+              </p>
             </div>
           </div>
         </div>
@@ -241,11 +273,22 @@ export default function EditTemplatePage() {
               />
             </TabsContent>
             <TabsContent value="code" className="flex-1 m-0 relative">
-              <Textarea
+              <Editor
+                height="100%"
+                defaultLanguage="html"
                 value={code}
-                onChange={(e) => setCode(e.target.value)}
-                placeholder="HTML code..."
-                className="absolute inset-0 w-full h-full resize-none border-0 rounded-none focus-visible:ring-0 font-mono text-xs bg-[#1e1e1e] text-gray-300 p-4"
+                onChange={(value) => setCode(value ?? '')}
+                theme="vs-dark"
+                options={{
+                  minimap: { enabled: true },
+                  fontSize: 13,
+                  automaticLayout: true,
+                  wordWrap: 'on',
+                  scrollBeyondLastLine: false,
+                  tabSize: 2,
+                  formatOnPaste: true,
+                  formatOnType: true,
+                }}
               />
             </TabsContent>
           </Tabs>

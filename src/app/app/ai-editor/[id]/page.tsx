@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { apiService, toShortNamespace, type Template } from '@/lib/api';
+import { apiService, toShortNamespace, type Template, savePublishedUrl } from '@/lib/api';
 import { 
   Loader2,
   Send,
@@ -387,6 +387,7 @@ Puedes pedirme cosas como:
       setOriginalCode(currentCode);
 
       const siteUrl = `${window.location.origin}/view-template/${template.id}`;
+      savePublishedUrl(template.id, siteUrl);
       await navigator.clipboard.writeText(siteUrl).catch(() => {});
 
       toast({

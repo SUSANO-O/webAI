@@ -24,6 +24,30 @@ export interface AuthResponse {
 // HTML code is stored in localStorage keyed by template id.
 
 const CODE_STORAGE_PREFIX = 'template_code_';
+const PUBLISHED_URL_PREFIX = 'template_published_url_';
+
+export function savePublishedUrl(templateId: number, url: string): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(`${PUBLISHED_URL_PREFIX}${templateId}`, url);
+  } catch {}
+}
+
+export function getPublishedUrl(templateId: number): string {
+  if (typeof window === 'undefined') return '';
+  try {
+    return localStorage.getItem(`${PUBLISHED_URL_PREFIX}${templateId}`) || '';
+  } catch {
+    return '';
+  }
+}
+
+function removePublishedUrl(templateId: number): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.removeItem(`${PUBLISHED_URL_PREFIX}${templateId}`);
+  } catch {}
+}
 
 function saveCodeLocally(templateId: number, code: string): void {
   if (typeof window === 'undefined') return;
@@ -291,6 +315,7 @@ class ApiService {
     }
     // Clean up local code
     removeCodeLocally(id);
+    removePublishedUrl(id);
     console.log('✅ [API] Template deleted:', id);
   }
 }

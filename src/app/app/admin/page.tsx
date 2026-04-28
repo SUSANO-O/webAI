@@ -10,8 +10,8 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { apiService, toShortNamespace, type Template } from '@/lib/api';
-import { Loader2, Edit, Trash2, CheckCircle2, RefreshCw, Sparkles } from 'lucide-react';
+import { apiService, toShortNamespace, type Template, getPublishedUrl } from '@/lib/api';
+import { Loader2, Edit, Trash2, CheckCircle2, RefreshCw, Sparkles, Share2 } from 'lucide-react';
 
 export default function AdminPage() {
   const { user, loading: authLoading } = useAuth();
@@ -24,7 +24,6 @@ export default function AdminPage() {
   const [editName, setEditName] = useState('');
   const [editCode, setEditCode] = useState('');
   const [saving, setSaving] = useState(false);
-  const [showPreview, setShowPreview] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -59,10 +58,7 @@ export default function AdminPage() {
   };
 
   const handleEdit = (template: Template) => {
-    setSelectedTemplate(template);
-    setEditName(template.name);
-    setEditCode(template.code || ''); // code is mapped from namespace by getTemplates()
-    setShowEditDialog(true);
+    router.push(`/app/edit-template/${template.id}`);
   };
 
   const handleSave = async () => {
@@ -121,33 +117,6 @@ export default function AdminPage() {
     }
   };
 
-  const handlePreview = (template: Template) => {
-    setSelectedTemplate(template);
-    setShowPreview(true);
-  };
-
-  const handleCopyUrl = async (template: Template) => {
-    // URL para editar el template
-    const editUrl = `${window.location.origin}/app/edit-template/${template.id}`;
-    try {
-      await navigator.clipboard.writeText(editUrl);
-      toast({
-        title: 'URL copiada',
-        description: 'La URL de edición ha sido copiada al portapapeles',
-      });
-    } catch (error) {
-      console.error('Error copying URL:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Error al copiar URL',
-      });
-    }
-  };
-
-  const handleViewTemplate = (template: Template) => {
-    router.push(`/app/edit-template/${template.id}`);
-  };
 
   const handleAIEditor = (template: Template) => {
     router.push(`/app/ai-editor/${template.id}`);
@@ -158,30 +127,11 @@ export default function AdminPage() {
     try {
       await navigator.clipboard.writeText(shareUrl);
       toast({
-        title: 'URL de compartir copiada',
-        description: 'La URL para compartir ha sido copiada al portapapeles',
+        title: 'URL copiada',
+        description: shareUrl,
       });
-    } catch (error) {
-      console.error('Error copying share URL:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Error al copiar URL de compartir',
-      });
-    }
-  };
-
-  const handleCopyId = async (id: number) => {
-    try {
-      await navigator.clipboard.writeText(String(id));
-      setCopiedId(id);
-      setTimeout(() => setCopiedId(null), 2000);
-      toast({
-        title: 'ID copiado',
-        description: 'El ID ha sido copiado al portapapeles',
-      });
-    } catch (error) {
-      console.error('Error copying ID:', error);
+    } catch {
+      toast({ variant: 'destructive', title: 'Error', description: 'Error al copiar URL' });
     }
   };
 
@@ -273,6 +223,20 @@ export default function AdminPage() {
                     <p>{new Date(template.created_at).toLocaleDateString()}</p>
                   </div>
                   
+                  {/* URL publicada */}
+                  {getPublishedUrl(template.id) && (
+                    <a
+                      href={getPublishedUrl(template.id)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 text-xs text-green-400 hover:text-green-300 truncate"
+                      title={getPublishedUrl(template.id)}
+                    >
+                      <span className="w-2 h-2 rounded-full bg-green-400 shrink-0" />
+                      Publicado — ver sitio
+                    </a>
+                  )}
+
                   {/* Acción principal - AI Editor */}
                   <div className="pt-2 border-t border-gray-700">
                     <Button
@@ -295,6 +259,15 @@ export default function AdminPage() {
                     >
                       <Edit className="mr-2 h-3 w-3" />
                       Editar Rápido
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleShareTemplate(template)}
+                      className="bg-gray-700 border-gray-600 text-blue-400 hover:bg-gray-600 hover:text-blue-300"
+                      title="Copiar URL pública"
+                    >
+                      <Share2 className="h-3 w-3" />
                     </Button>
                     <Button
                       variant="outline"
@@ -351,41 +324,6 @@ export default function AdminPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog de preview */}
-      <Dialog open={showPreview} onOpenChange={setShowPreview}>
-        <DialogContent className="max-w-6xl max-h-[90vh]">
-          <DialogHeader>
-            <DialogTitle>{selectedTemplate?.name}</DialogTitle>
-            <DialogDescription>
-              Preview del template ID: {selectedTemplate?.id}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            {selectedTemplate?.code && (
-              <iframe
-                srcDoc={selectedTemplate.code}
-                title="Template Preview"
-                className="w-full h-[600px] border rounded"
-                sandbox="allow-scripts allow-same-origin"
-              />
-            )}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowPreview(false)}>
-              Cerrar
-            </Button>
-            {selectedTemplate && (
-              <Button onClick={() => {
-                setShowPreview(false);
-                handleEdit(selectedTemplate);
-              }}>
-                <Edit className="mr-2 h-4 w-4" />
-                Editar
-              </Button>
-            )}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
