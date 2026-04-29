@@ -48,6 +48,36 @@ import {
 } from '@/components/ui/dialog';
 import { refineTemplateDirectAction, describeImageForContext } from '@/app/refine-actions';
 
+/** Tipos minimos para Web Speech API (no incluidos en este tsconfig). */
+type SpeechRecognitionCtor = new () => SpeechRecognitionInstance;
+interface SpeechRecognitionInstance {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  onresult: ((event: SpeechRecognitionResultEventLike) => void) | null;
+  onerror: (() => void) | null;
+  onend: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+}
+interface SpeechRecognitionResultEventLike {
+  results: ArrayLike<SpeechRecognitionResultLike>;
+}
+interface SpeechRecognitionResultLike {
+  isFinal: boolean;
+  length: number;
+  [index: number]: { transcript: string };
+}
+
+function getSpeechRecognitionConstructor(): SpeechRecognitionCtor | undefined {
+  if (typeof window === 'undefined') return undefined;
+  const w = window as unknown as {
+    SpeechRecognition?: SpeechRecognitionCtor;
+    webkitSpeechRecognition?: SpeechRecognitionCtor;
+  };
+  return w.SpeechRecognition ?? w.webkitSpeechRecognition;
+}
+
 interface ChatMessage {
   id: string;
   role: 'user' | 'assistant' | 'system';
@@ -104,7 +134,7 @@ export default function AIEditorPage() {
   const [attachedFileName, setAttachedFileName] = useState<string | null>(null);
   const [isDescribingImage, setIsDescribingImage] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
 
   // Image editor state
   interface TemplateImage {
@@ -447,7 +477,8 @@ Puedes pedirme cosas como:
       try {
         const result = await describeImageForContext(base64, file.type);
         if (result.success && result.description) {
-          setInputMessage(prev => prev ? `${prev}\n\n${result.description}` : result.description);
+          const desc = result.description;
+          setInputMessage(prev => (prev ? `${prev}\n\n${desc}` : desc));
           toast({ title: 'Imagen analizada', description: 'Descripción añadida al prompt' });
         } else {
           toast({ variant: 'destructive', title: 'Error', description: result.error });
@@ -486,7 +517,7 @@ Puedes pedirme cosas como:
 
   // Voice recording: Web Speech API
   const toggleVoiceInput = () => {
-    const SpeechRecognition = (typeof window !== 'undefined' && (window as any).SpeechRecognition) || (window as any).webkitSpeechRecognition;
+    const SpeechRecognition = getSpeechRecognitionConstructor();
     if (!SpeechRecognition) {
       toast({ variant: 'destructive', title: 'No soportado', description: 'El reconocimiento de voz no está disponible en tu navegador (prueba Chrome o Edge)' });
       return;
@@ -500,10 +531,10 @@ Puedes pedirme cosas como:
     recognition.lang = 'es-ES';
     recognition.continuous = true;
     recognition.interimResults = true;
-    recognition.onresult = (event: SpeechRecognitionEvent) => {
+    recognition.onresult = (event: SpeechRecognitionResultEventLike) => {
       const transcript = Array.from(event.results)
-        .filter(r => r.isFinal)
-        .map(r => r[r.length - 1].transcript)
+        .filter((r: SpeechRecognitionResultLike) => r.isFinal)
+        .map((r: SpeechRecognitionResultLike) => r[r.length - 1].transcript)
         .join('');
       if (transcript) setInputMessage(prev => (prev ? prev.trimEnd() + ' ' : '') + transcript);
     };

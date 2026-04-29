@@ -5,13 +5,23 @@ import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import Editor from '@monaco-editor/react';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { apiService, toShortNamespace, type Template } from '@/lib/api';
-import { Loader2, Save, Eye, ArrowLeft, Download, Share2, Code } from 'lucide-react';
+import { Loader2, Save, Eye, ArrowLeft, Download, Share2, Code, Upload } from 'lucide-react';
+
+const MAX_IMAGE_FILE_BYTES = 2 * 1024 * 1024;
 
 function formatHtmlForEditor(rawHtml: string): string {
   const source = rawHtml.trim();
@@ -63,6 +73,13 @@ export default function EditTemplatePage() {
   const [code, setCode] = useState('');
   const [directTextMode, setDirectTextMode] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const previewImageTargetRef = useRef<HTMLImageElement | null>(null);
+  const imageFileInputRef = useRef<HTMLInputElement>(null);
+
+  const [imageEditOpen, setImageEditOpen] = useState(false);
+  const [imageEditSrc, setImageEditSrc] = useState('');
+  const [imageEditAlt, setImageEditAlt] = useState('');
+  const [imageFileReading, setImageFileReading] = useState(false);
 
   const serializeIframeDocument = (doc: Document) => {
     const doctype = doc.doctype?.name ? `<!DOCTYPE ${doc.doctype.name}>` : '<!DOCTYPE html>';
@@ -111,26 +128,83 @@ export default function EditTemplatePage() {
     event.preventDefault();
     event.stopPropagation();
 
-    const currentSrc = image.getAttribute('src') || '';
-    const nextSrc = window.prompt('Nueva URL de la imagen', currentSrc);
-    if (nextSrc === null) return;
+    previewImageTargetRef.current = image;
+    setImageEditSrc(image.getAttribute('src') || '');
+    setImageEditAlt(image.getAttribute('alt') || '');
+    setImageEditOpen(true);
+  }, [directTextMode]);
 
-    const trimmedSrc = nextSrc.trim();
-    if (trimmedSrc) {
-      image.setAttribute('src', trimmedSrc);
+  const handleImageEditApply = () => {
+    const img = previewImageTargetRef.current;
+    if (!img) {
+      setImageEditOpen(false);
+      return;
     }
 
-    const currentAlt = image.getAttribute('alt') || '';
-    const nextAlt = window.prompt('Texto ALT de la imagen (opcional)', currentAlt);
-    if (nextAlt !== null) {
-      image.setAttribute('alt', nextAlt);
+    const trimmed = imageEditSrc.trim();
+    if (trimmed) {
+      img.setAttribute('src', trimmed);
     }
+    img.setAttribute('alt', imageEditAlt.trim());
+
+    setImageEditOpen(false);
+    previewImageTargetRef.current = null;
 
     toast({
       title: 'Imagen actualizada',
-      description: 'Haz clic en "Aplicar cambios visuales" para sincronizar el HTML.',
+      description: 'Usa "Aplicar cambios visuales" y luego "Guardar" para persistir.',
     });
-  }, [directTextMode, toast]);
+  };
+
+  const handleImageEditDialogOpenChange = (open: boolean) => {
+    setImageEditOpen(open);
+    if (!open) {
+      previewImageTargetRef.current = null;
+    }
+  };
+
+  const handlePickLocalImage = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file || !file.type.startsWith('image/')) {
+      toast({
+        variant: 'destructive',
+        title: 'Archivo no valido',
+        description: 'Elige un archivo de imagen (jpg, png, webp, gif, svg, etc.).',
+      });
+      return;
+    }
+
+    if (file.size > MAX_IMAGE_FILE_BYTES) {
+      toast({
+        variant: 'destructive',
+        title: 'Imagen demasiado grande',
+        description: `Maximo ${Math.round(MAX_IMAGE_FILE_BYTES / (1024 * 1024))} MB. Reduce el tamano o usa una URL.`,
+      });
+      return;
+    }
+
+    setImageFileReading(true);
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = typeof reader.result === 'string' ? reader.result : '';
+      setImageEditSrc(result);
+      setImageFileReading(false);
+      toast({
+        title: 'Imagen cargada',
+        description: 'Se incrustara como data URL en el HTML al aplicar.',
+      });
+    };
+    reader.onerror = () => {
+      setImageFileReading(false);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'No se pudo leer el archivo.',
+      });
+    };
+    reader.readAsDataURL(file);
+  };
 
   const syncDirectModeInIframe = () => {
     const doc = iframeRef.current?.contentDocument;
@@ -306,6 +380,70 @@ export default function EditTemplatePage() {
 
   return (
     <div className="flex flex-1 flex-col bg-muted/40">
+      <Dialog open={imageEditOpen} onOpenChange={handleImageEditDialogOpenChange}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Editar imagen</DialogTitle>
+            <DialogDescription>
+              Pega una URL o sube un archivo desde tu equipo. Las imagenes locales se guardan como data URL dentro del HTML.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="image-src-url">URL o data URL (src)</Label>
+              <Input
+                id="image-src-url"
+                value={imageEditSrc}
+                onChange={(ev) => setImageEditSrc(ev.target.value)}
+                placeholder="https://..."
+                className="font-mono text-xs"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Archivo local</Label>
+              <input
+                ref={imageFileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handlePickLocalImage}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                disabled={imageFileReading}
+                onClick={() => imageFileInputRef.current?.click()}
+              >
+                {imageFileReading ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Upload className="mr-2 h-4 w-4" />
+                )}
+                Subir imagen
+              </Button>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="image-alt">Texto alternativo (alt)</Label>
+              <Input
+                id="image-alt"
+                value={imageEditAlt}
+                onChange={(ev) => setImageEditAlt(ev.target.value)}
+                placeholder="Descripcion de la imagen"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => handleImageEditDialogOpenChange(false)}>
+              Cancelar
+            </Button>
+            <Button type="button" onClick={handleImageEditApply} disabled={!imageEditSrc.trim()}>
+              Aplicar a la imagen
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Header */}
       <div className="border-b bg-background p-4">
         <div className="flex items-center justify-between">
