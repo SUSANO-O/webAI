@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import Editor from '@monaco-editor/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { apiService, toShortNamespace, type Template } from '@/lib/api';
@@ -60,6 +61,126 @@ export default function EditTemplatePage() {
   const [saving, setSaving] = useState(false);
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
+  const [directTextMode, setDirectTextMode] = useState(false);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  const serializeIframeDocument = (doc: Document) => {
+    const doctype = doc.doctype?.name ? `<!DOCTYPE ${doc.doctype.name}>` : '<!DOCTYPE html>';
+    return `${doctype}\n${doc.documentElement.outerHTML}`;
+  };
+
+  const applyVisualEditableState = (doc: Document, enabled: boolean) => {
+    const editableSelectors = [
+      'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+      'p', 'span', 'a', 'li', 'button', 'label',
+      'strong', 'em', 'small', 'td', 'th',
+    ];
+
+    const elements = doc.querySelectorAll<HTMLElement>(editableSelectors.join(','));
+    elements.forEach((el) => {
+      const hasDirectText = el.childElementCount === 0 && (el.textContent?.trim()?.length ?? 0) > 0;
+      if (hasDirectText) {
+        if (enabled) {
+          el.setAttribute('contenteditable', 'true');
+          el.setAttribute('spellcheck', 'false');
+        } else {
+          el.removeAttribute('contenteditable');
+          el.removeAttribute('spellcheck');
+        }
+      }
+    });
+  };
+
+  const preventNavigationWhileEditing = useCallback((event: MouseEvent) => {
+    if (!directTextMode) return;
+    const target = event.target as HTMLElement | null;
+    if (!target) return;
+    if (target.closest('a')) {
+      event.preventDefault();
+    }
+  }, [directTextMode]);
+
+  const handleImageClick = useCallback((event: MouseEvent) => {
+    if (!directTextMode) return;
+    const target = event.target as HTMLElement | null;
+    if (!target) return;
+
+    const image = target.closest('img') as HTMLImageElement | null;
+    if (!image) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const currentSrc = image.getAttribute('src') || '';
+    const nextSrc = window.prompt('Nueva URL de la imagen', currentSrc);
+    if (nextSrc === null) return;
+
+    const trimmedSrc = nextSrc.trim();
+    if (trimmedSrc) {
+      image.setAttribute('src', trimmedSrc);
+    }
+
+    const currentAlt = image.getAttribute('alt') || '';
+    const nextAlt = window.prompt('Texto ALT de la imagen (opcional)', currentAlt);
+    if (nextAlt !== null) {
+      image.setAttribute('alt', nextAlt);
+    }
+
+    toast({
+      title: 'Imagen actualizada',
+      description: 'Haz clic en "Aplicar cambios visuales" para sincronizar el HTML.',
+    });
+  }, [directTextMode, toast]);
+
+  const syncDirectModeInIframe = () => {
+    const doc = iframeRef.current?.contentDocument;
+    if (!doc) return;
+
+    // Evitamos designMode global porque en algunos templates bloquea eventos.
+    doc.designMode = 'off';
+    if (doc.body) {
+      doc.body.contentEditable = directTextMode ? 'true' : 'false';
+    }
+    applyVisualEditableState(doc, directTextMode);
+
+    let styleTag = doc.getElementById('direct-text-mode-style');
+    if (directTextMode && !styleTag) {
+      styleTag = doc.createElement('style');
+      styleTag.id = 'direct-text-mode-style';
+      styleTag.textContent = `
+        [contenteditable="true"]:hover { outline: 1px dashed rgba(180, 70, 50, 0.45) !important; }
+        [contenteditable="true"]:focus { outline: 2px solid rgba(180, 70, 50, 0.75) !important; }
+        img:hover { cursor: pointer !important; }
+      `;
+      doc.head.appendChild(styleTag);
+    } else if (!directTextMode && styleTag) {
+      styleTag.remove();
+    }
+
+    const win = iframeRef.current?.contentWindow;
+    if (win) {
+      win.document.removeEventListener('click', preventNavigationWhileEditing, true);
+      win.document.removeEventListener('click', handleImageClick, true);
+      if (directTextMode) {
+        win.document.addEventListener('click', preventNavigationWhileEditing, true);
+        win.document.addEventListener('click', handleImageClick, true);
+      } else {
+        win.document.removeEventListener('click', preventNavigationWhileEditing, true);
+        win.document.removeEventListener('click', handleImageClick, true);
+      }
+    }
+  };
+
+  const handleApplyDirectTextChanges = () => {
+    const doc = iframeRef.current?.contentDocument;
+    if (!doc) return;
+
+    setCode(formatHtmlForEditor(serializeIframeDocument(doc)));
+    toast({
+      title: 'Texto sincronizado',
+      description: 'Los cambios visuales fueron aplicados al código HTML.',
+    });
+  };
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -72,6 +193,10 @@ export default function EditTemplatePage() {
       loadTemplate();
     }
   }, [user, templateId]);
+
+  useEffect(() => {
+    syncDirectModeInIframe();
+  }, [directTextMode, code]);
 
   const loadTemplate = async () => {
     try {
@@ -199,6 +324,12 @@ export default function EditTemplatePage() {
             </div>
           </div>
           <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={handleApplyDirectTextChanges}
+            >
+              Aplicar cambios visuales
+            </Button>
             <Button variant="outline" onClick={handleShare}>
               <Share2 className="mr-2 h-4 w-4" />
               Compartir
@@ -241,10 +372,19 @@ export default function EditTemplatePage() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Editor de Código</Label>
-              <p className="text-xs text-muted-foreground">
-                Usa la pestaña "Código" para editar con Monaco (estilo VS Code).
-              </p>
+              <div className="flex items-center justify-between rounded-md border p-3">
+                <div className="space-y-1">
+                  <Label htmlFor="direct-visual-switch">Edicion visual en Preview</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Activa para editar textos e imagenes sobre el layout.
+                  </p>
+                </div>
+                <Switch
+                  id="direct-visual-switch"
+                  checked={directTextMode}
+                  onCheckedChange={setDirectTextMode}
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -266,10 +406,12 @@ export default function EditTemplatePage() {
             </div>
             <TabsContent value="preview" className="flex-1 bg-white m-0">
               <iframe
+                ref={iframeRef}
                 srcDoc={code}
                 title="Template Preview"
                 className="w-full h-full border-0"
                 sandbox="allow-scripts allow-same-origin"
+                onLoad={syncDirectModeInIframe}
               />
             </TabsContent>
             <TabsContent value="code" className="flex-1 m-0 relative">
