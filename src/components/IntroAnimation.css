@@ -6,7 +6,7 @@
   width: 100%;
   height: 100vh;
   z-index: 9999;
-  background: linear-gradient(135deg, #0a0a1a 0%, #111827 50%, #0d1117 100%);
+  background: #ffffff;
   overflow: hidden;
 }
 
@@ -18,60 +18,55 @@
   cursor: pointer;
 }
 
-/* ─── Botón START principal ──────────────────────────────────── */
+/* ─── Logo CTA (reemplaza ENTRAR) ─────────────────────────────── */
 .intro-start-button {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: clamp(160px, 28vw, 210px);
-  height: clamp(160px, 28vw, 210px);
+  width: clamp(168px, 36vw, 260px);
+  height: clamp(168px, 36vw, 260px);
+  padding: clamp(10px, 2vw, 16px);
 
-  background: rgba(245, 158, 11, 0.12);
-  border: 2px solid rgba(245, 158, 11, 0.6);
+  background: transparent;
+  border: none;
   border-radius: 50%;
-  backdrop-filter: blur(10px);
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.06),
+    0 0 0 1px rgba(0, 0, 0, 0.06);
 
   animation: fadeInScale 1.2s ease-out forwards;
 
   display: flex;
-  flex-direction: column;
   justify-content: center;
   align-items: center;
-  gap: 4px;
-  color: white;
-  font-size: clamp(1.6rem, 6vw, 2.8rem);
-  font-weight: 800;
-  font-family: 'Poppins', 'Inter', sans-serif;
-  text-shadow: 0 0 20px rgba(245, 158, 11, 0.9);
-  letter-spacing: 3px;
 
   cursor: pointer;
   z-index: 20;
-  transition: all 0.4s ease-in-out;
+  transition: transform 0.35s ease, box-shadow 0.35s ease;
 }
 
-.intro-start-button .intro-subtitle {
-  font-size: clamp(0.5rem, 1.5vw, 0.7rem);
-  letter-spacing: 4px;
-  color: rgba(46, 196, 182, 0.85);
-  text-shadow: 0 0 10px rgba(46, 196, 182, 0.7);
-  font-weight: 400;
-  text-transform: uppercase;
+.intro-start-logo {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
 }
 
 .intro-start-button:hover {
-  background: rgba(245, 158, 11, 0.22);
-  border-color: rgba(46, 196, 182, 0.8);
-  transform: translate(-50%, -50%) scale(1.06);
+  transform: translate(-50%, -50%) scale(1.05);
   box-shadow:
-    0 0 30px rgba(245, 158, 11, 0.5),
-    0 0 60px rgba(46, 196, 182, 0.3),
-    inset 0 0 20px rgba(245, 158, 11, 0.08);
+    0 8px 32px rgba(255, 152, 0, 0.2),
+    0 0 0 1px rgba(38, 166, 154, 0.25);
+}
+
+.intro-start-button:focus-visible {
+  outline: 2px solid rgb(0, 188, 212);
+  outline-offset: 4px;
 }
 
 .intro-start-button:active {
-  transform: translate(-50%, -50%) scale(0.97);
+  transform: translate(-50%, -50%) scale(0.98);
 }
 
 /* ─── Botón Skip ─────────────────────────────────────────────── */
@@ -81,12 +76,12 @@
   right: 1.5rem;
   padding: 0.6rem 1.2rem;
 
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 0, 0, 0.12);
   border-radius: 10px;
-  backdrop-filter: blur(8px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(0, 0, 0, 0.65);
   font-size: 0.85rem;
   font-weight: 500;
   font-family: 'Poppins', 'Inter', sans-serif;
@@ -99,11 +94,11 @@
 }
 
 .intro-skip-button:hover {
-  background: rgba(245, 158, 11, 0.15);
-  border-color: rgba(245, 158, 11, 0.5);
-  color: white;
+  background: #ffffff;
+  border-color: rgba(255, 152, 0, 0.45);
+  color: rgba(0, 0, 0, 0.85);
   transform: scale(1.04);
-  box-shadow: 0 0 15px rgba(245, 158, 11, 0.3);
+  box-shadow: 0 4px 16px rgba(255, 152, 0, 0.18);
 }
 
 /* ─── Logo / nombre de la app ────────────────────────────────── */
@@ -121,7 +116,13 @@
   font-size: clamp(0.9rem, 2.5vw, 1.3rem);
   font-weight: 700;
   font-family: 'Poppins', sans-serif;
-  background: linear-gradient(90deg, #f59e0b 0%, #2ec4c4 100%);
+  background: linear-gradient(
+    135deg,
+    rgb(255, 235, 59) 0%,
+    rgb(255, 152, 0) 45%,
+    rgb(38, 166, 154) 78%,
+    rgb(0, 188, 212) 100%
+  );
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -131,7 +132,7 @@
 
 .intro-brand-tagline {
   font-size: clamp(0.6rem, 1.5vw, 0.75rem);
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(0, 0, 0, 0.45);
   letter-spacing: 3px;
   text-transform: uppercase;
   margin-top: 4px;
@@ -157,9 +158,8 @@
 /* ─── Responsive ─────────────────────────────────────────────── */
 @media (max-width: 768px) {
   .intro-start-button {
-    width: clamp(130px, 42vw, 180px);
-    height: clamp(130px, 42vw, 180px);
-    font-size: clamp(1.3rem, 9vw, 2rem);
+    width: clamp(140px, 48vw, 220px);
+    height: clamp(140px, 48vw, 220px);
   }
   .intro-skip-button {
     top: 1rem;
@@ -174,8 +174,7 @@
 
 @media (max-width: 480px) {
   .intro-start-button {
-    width: clamp(110px, 48vw, 150px);
-    height: clamp(110px, 48vw, 150px);
-    font-size: clamp(1.1rem, 11vw, 1.6rem);
+    width: clamp(128px, 52vw, 190px);
+    height: clamp(128px, 52vw, 190px);
   }
 }

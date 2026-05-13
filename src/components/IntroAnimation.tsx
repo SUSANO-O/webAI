@@ -1,8 +1,10 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
 import * as THREE from 'three';
 import gsap from 'gsap';
+import logo from '@/img/logo-web360.png';
 import './IntroAnimation.css';
 
 interface IntroAnimationProps {
@@ -19,10 +21,8 @@ const IntroAnimation = ({ onComplete }: IntroAnimationProps) => {
 
     // ─── Colores webAI ────────────────────────────────────────────
     const CORP_COLORS = [
-      0xf59e0b, 0x2ec4c4, 0x7c3aed, 0xfbbf24,
-      0x06b6d4, 0xa78bfa, 0xf97316, 0x14b8a6,
-      0x8b5cf6, 0xfcd34d, 0x67e8f9, 0x10b981,
-      0xec4899, 0x6366f1, 0xf59e0b, 0x2ec4c4,
+      0xffeb3b, 0xfdd835, 0xffc107, 0xffb300, 0xff9800, 0xf57c00, 0x26a69a, 0x00bcd4,
+      0xffeb3b, 0xfdd835, 0xffc107, 0xffb300, 0xff9800, 0xf57c00, 0x26a69a, 0x00bcd4,
     ];
 
     // Patrón QR 5×5
@@ -52,10 +52,10 @@ const IntroAnimation = ({ onComplete }: IntroAnimationProps) => {
 
     // Luces
     scene.add(new THREE.AmbientLight(0xffffff, 0.7));
-    const pLight1 = new THREE.PointLight(0xf59e0b, 3, 50);
+    const pLight1 = new THREE.PointLight(0xff9800, 3, 50);
     pLight1.position.set(10, 10, 10);
     scene.add(pLight1);
-    const pLight2 = new THREE.PointLight(0x2ec4c4, 2, 50);
+    const pLight2 = new THREE.PointLight(0x00bcd4, 2, 50);
     pLight2.position.set(-10, -5, 8);
     scene.add(pLight2);
 
@@ -256,18 +256,29 @@ const IntroAnimation = ({ onComplete }: IntroAnimationProps) => {
       <div ref={containerRef} className="intro-animation-container" onClick={handleEnter} />
 
       {showButton ? (
-        <button className="intro-start-button" onClick={handleEnter}>
-          ENTRAR
-          <span className="intro-subtitle">web AI</span>
+        <button
+          type="button"
+          className="intro-start-button"
+          onClick={handleEnter}
+          aria-label="Entrar a WEB 360"
+        >
+          <Image
+            src={logo}
+            alt=""
+            width={280}
+            height={280}
+            className="intro-start-logo"
+            priority
+          />
         </button>
       ) : (
-        <button className="intro-skip-button" onClick={handleEnter}>
+        <button type="button" className="intro-skip-button" onClick={handleEnter}>
           Saltar ⏭
         </button>
       )}
 
       <div className="intro-brand">
-        <div className="intro-brand-name">WEB AI</div>
+        <div className="intro-brand-name">WEB 360</div>
         <div className="intro-brand-tagline">Website Builder</div>
       </div>
     </div>

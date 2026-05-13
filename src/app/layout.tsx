@@ -5,8 +5,12 @@ import IntroWrapper from '@/components/IntroWrapper';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'web AI',
+  title: 'WEB 360',
   description: 'Generate websites with the power of AI',
+  icons: {
+    icon: [{ url: '/logo-web360.png', type: 'image/png' }],
+    apple: '/logo-web360.png',
+  },
 };
 
 export default function RootLayout({
