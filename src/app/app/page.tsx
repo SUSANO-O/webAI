@@ -17,6 +17,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Save } from 'lucide-react';
+import { useOmniWallet } from '@/hooks/useOmniWallet';
+import { RewardBadge } from '@/components/omni/RewardBadge';
+import { formatRewardLabel } from '@/lib/omniRewards';
 
 // ─── Template Options ──────────────────────────────────────────────
 
@@ -86,6 +89,9 @@ export default function Dashboard() {
 
   const { toast } = useToast();
   const { user, loading: authLoading } = useAuth();
+  const { mint, chess } = useOmniWallet();
+  const multiplier = chess?.multiplier ?? 1;
+  const rewardedGenRef = useRef<string | null>(null);
   const router = useRouter();
   const [prompt, setPrompt] = useState('');
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
@@ -126,7 +132,7 @@ export default function Dashboard() {
     }
   }, [websiteState]);
 
-  // Save to history when content is generated
+  // Save to history + mint WAI when content is generated
   useEffect(() => {
     const isDefault = websiteState.websiteContent === initialWebsiteState.websiteContent;
     if (!isPending && !websiteState.error && !isDefault && prompt) {
@@ -139,8 +145,22 @@ export default function Dashboard() {
       const updated = [entry, ...loadHistory()].slice(0, MAX_HISTORY);
       saveHistory(updated);
       setGenHistory(updated);
+
+      const rewardKey = websiteState.websiteContent.slice(0, 80);
+      if (rewardedGenRef.current !== rewardKey) {
+        rewardedGenRef.current = rewardKey;
+        void (async () => {
+          const reward = await mint('wai-generate');
+          if (reward?.ok && reward.result?.toastMessage) {
+            toast({
+              title: `+${reward.result.minted} ${reward.result.symbol}`,
+              description: reward.result.toastMessage,
+            });
+          }
+        })();
+      }
     }
-  }, [websiteState.websiteContent, isPending]);
+  }, [websiteState.websiteContent, isPending]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Progress simulation
   useEffect(() => {
@@ -184,7 +204,7 @@ export default function Dashboard() {
     setSelectedTemplate(template.id);
   };
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     const blob = new Blob([editedContent], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -194,6 +214,13 @@ export default function Dashboard() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+    const reward = await mint('wai-download');
+    if (reward?.ok && reward.result?.toastMessage) {
+      toast({
+        title: `+${reward.result.minted} ${reward.result.symbol}`,
+        description: reward.result.toastMessage,
+      });
+    }
   };
 
   const handleSaveTemplate = async () => {
@@ -221,6 +248,13 @@ export default function Dashboard() {
       toast({ title: 'Template guardado', description: `"${saveTemplateName}" guardado exitosamente` });
       setShowSaveDialog(false);
       setSaveTemplateName('');
+      const reward = await mint('wai-save');
+      if (reward?.ok && reward.result?.toastMessage) {
+        toast({
+          title: `+${reward.result.minted} ${reward.result.symbol}`,
+          description: reward.result.toastMessage,
+        });
+      }
     } catch (error) {
       console.error('Error guardando template:', error);
       toast({ variant: 'destructive', title: 'Error', description: error instanceof Error ? error.message : 'Error al guardar' });
@@ -361,8 +395,20 @@ export default function Dashboard() {
               }}
             >
               {isPending ? <Loader2 className="animate-spin" /> : <Wand2 />}
-              {authLoading ? 'Loading...' : !user ? 'Login Required' : isPending ? 'Generando...' : 'Generate Website'}
+              <span className="flex items-center gap-2">
+                {authLoading ? 'Loading...' : !user ? 'Login Required' : isPending ? 'Generando...' : 'Generate Website'}
+                {user && !isPending && (
+                  <RewardBadge taskId="wai-generate" multiplier={multiplier} variant="solid" />
+                )}
+              </span>
             </Button>
+            {user && (
+              <p className="text-[11px] text-center text-teal-700/80">
+                Acciones disponibles: {formatRewardLabel('wai-generate', multiplier)} ·{' '}
+                {formatRewardLabel('wai-save', multiplier)} · {formatRewardLabel('wai-download', multiplier)}
+                {multiplier > 1 ? ` · Multi ×${multiplier}` : ''}
+              </p>
+            )}
           </form>
 
           {/* Generation History */}
@@ -489,17 +535,21 @@ export default function Dashboard() {
                   Abrir en Editor
                 </Button>
               )}
-              <Button variant="outline" size="sm" onClick={handleDownload} disabled={isPending} className="bg-white/20 border-white/40 text-white hover:bg-white/30 font-medium">
-                <Download className="mr-2 h-4 w-4" />Download
+              <Button variant="outline" size="sm" onClick={handleDownload} disabled={isPending} className="bg-white/20 border-white/40 text-white hover:bg-white/30 font-medium gap-2">
+                <Download className="h-4 w-4" />
+                Download
+                <RewardBadge taskId="wai-download" multiplier={multiplier} variant="soft" />
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setShowSaveDialog(true)}
                 disabled={!user || isDefaultContent || isPending}
-                className="bg-white/20 border-white/40 text-white hover:bg-white/30 font-medium"
+                className="bg-white/20 border-white/40 text-white hover:bg-white/30 font-medium gap-2"
               >
-                <Save className="mr-2 h-4 w-4" />Save
+                <Save className="h-4 w-4" />
+                Save
+                <RewardBadge taskId="wai-save" multiplier={multiplier} variant="soft" />
               </Button>
             </div>
           </div>
@@ -547,8 +597,9 @@ export default function Dashboard() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowSaveDialog(false)}>Cancelar</Button>
-            <Button onClick={handleSaveTemplate} disabled={saving || !saveTemplateName}>
+            <Button onClick={handleSaveTemplate} disabled={saving || !saveTemplateName} className="gap-2">
               {saving ? 'Guardando...' : 'Guardar'}
+              <RewardBadge taskId="wai-save" multiplier={multiplier} variant="solid" />
             </Button>
           </DialogFooter>
         </DialogContent>

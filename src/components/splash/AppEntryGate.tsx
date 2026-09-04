@@ -7,10 +7,6 @@ import { A360Slot, Advertising360Script } from '@/components/a360/Advertising360
 const MARCA = 'startapp360';
 const SOLUCION = 'web360';
 
-/**
- * Un solo rail nav persistente (placement splash|hub).
- * Evita duplicados al entrar/salir del splash.
- */
 export default function AppEntryGate({ children }: { children: React.ReactNode }) {
   const [entered, setEntered] = useState(false);
 

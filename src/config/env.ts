@@ -13,6 +13,10 @@ export const config = {
     passwordKey: process.env.NEXT_PUBLIC_PASSWORD_STORAGE_KEY || 'auth_password',
     tokenKey: process.env.NEXT_PUBLIC_TOKEN_STORAGE_KEY || 'auth_token',
   },
+  omni: {
+    apiUrl: process.env.NEXT_PUBLIC_OMNI_API_URL || 'http://127.0.0.1:4010',
+    webUrl: process.env.NEXT_PUBLIC_OMNI_WEB_URL || 'http://localhost:5175',
+  },
 } as const;
 
 export type Config = typeof config;

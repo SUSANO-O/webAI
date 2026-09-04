@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import AppIcon from '@/components/app-icon';
+import { WalletChip } from '@/components/omni/WalletChip';
 
 export function Header() {
   const { user, logout } = useAuth();
@@ -43,6 +44,7 @@ export function Header() {
         )}
       </nav>
       <div className="flex w-full items-center justify-end gap-4 md:ml-auto md:gap-2 lg:gap-4">
+        {user && <WalletChip />}
         {user ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

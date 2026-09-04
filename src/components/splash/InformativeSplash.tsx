@@ -10,8 +10,12 @@ import {
   Eye,
   Code2,
   ArrowRight,
+  Download,
+  Save,
+  Globe,
 } from 'lucide-react';
 import { A360Slot } from '@/components/a360/Advertising360Script';
+import { formatRewardLabel } from '@/lib/omniRewards';
 
 const MARCA = 'startapp360';
 const SOLUCION = 'web360';
@@ -49,18 +53,28 @@ const previewTiles = [
   { icon: LayoutTemplate, label: 'Templates', border: 'border-orange-400/70' },
   { icon: Eye, label: 'Preview', border: 'border-teal-400/70' },
   { icon: Code2, label: 'Editor', border: 'border-cyan-400/70' },
-  { icon: Rocket, label: 'Deploy', border: 'border-amber-500/70' },
+  { icon: Download, label: 'Export', border: 'border-amber-500/70' },
+];
+
+const rewards = [
+  { taskId: 'wai-generate' as const, icon: Wand2, label: 'Generar' },
+  { taskId: 'wai-save' as const, icon: Save, label: 'Guardar' },
+  { taskId: 'wai-download' as const, icon: Download, label: 'Descargar' },
+  { taskId: 'wai-publish' as const, icon: Globe, label: 'Publicar' },
 ];
 
 export default function InformativeSplash({ onEnter }: Props) {
+  const scrollToFeatures = () => {
+    document.getElementById('web360-features')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   return (
-    <div className="relative min-h-screen bg-white font-body text-foreground">
+    <div className="relative min-h-screen bg-white font-sans text-slate-900">
       <div className="mx-auto w-full max-w-6xl px-4 pt-3 sm:px-6">
         <A360Slot slot="premium" marca={MARCA} solucion={SOLUCION} />
       </div>
 
-      {/* Hero */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-amber-50/80 via-orange-50/40 to-white">
+      <section className="relative overflow-hidden bg-gradient-to-b from-amber-50/90 via-orange-50/40 to-white">
         <div className="pointer-events-none absolute -left-16 top-10 h-56 w-56 rounded-full bg-amber-300/40 blur-3xl" />
         <div className="pointer-events-none absolute -right-10 top-32 h-64 w-64 rounded-full bg-teal-300/30 blur-3xl" />
         <div className="pointer-events-none absolute bottom-24 left-1/2 h-48 w-48 -translate-x-1/2 rounded-full bg-cyan-300/25 blur-3xl" />
@@ -87,9 +101,21 @@ export default function InformativeSplash({ onEnter }: Props) {
             </span>
           </h1>
 
-          <p className="mb-8 max-w-xl text-base text-slate-500 sm:text-lg">
-            Genera sitios web profesionales con IA, previsualízalos al instante y edítalos cuando quieras.
+          <p className="mb-6 max-w-xl text-base text-slate-500 sm:text-lg">
+            Genera sitios web con IA: prompt, preview responsive y editor listo para publicar.
           </p>
+
+          <div className="mb-8 flex flex-wrap items-center justify-center gap-2">
+            {rewards.map((r) => (
+              <span
+                key={r.taskId}
+                className="inline-flex items-center gap-1.5 rounded-full border border-amber-300/70 bg-amber-50 px-3 py-1.5 text-[11px] font-bold text-amber-950 shadow-sm"
+              >
+                <r.icon className="h-3.5 w-3.5 text-amber-700" />
+                {r.label} · {formatRewardLabel(r.taskId)}
+              </span>
+            ))}
+          </div>
 
           <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
             <button
@@ -101,10 +127,10 @@ export default function InformativeSplash({ onEnter }: Props) {
             </button>
             <button
               type="button"
-              onClick={onEnter}
+              onClick={scrollToFeatures}
               className="w-full rounded-2xl border-2 border-[#26A69A]/50 bg-white/70 px-8 py-3.5 text-sm font-bold uppercase tracking-[0.18em] text-[#26A69A] transition hover:border-[#26A69A] hover:bg-teal-50/80 sm:w-auto"
             >
-              Ver generador
+              Ver landing
             </button>
           </div>
         </div>
@@ -119,8 +145,7 @@ export default function InformativeSplash({ onEnter }: Props) {
         </div>
       </section>
 
-      {/* Features */}
-      <section className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
+      <section id="web360-features" className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
         <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
           {features.map((f) => (
             <article
@@ -142,13 +167,12 @@ export default function InformativeSplash({ onEnter }: Props) {
         <A360Slot slot="featured" marca={MARCA} solucion={SOLUCION} />
       </div>
 
-      {/* Preview */}
       <section className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
         <h2 className="mb-2 text-center text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
           Preview
         </h2>
         <p className="mx-auto mb-8 max-w-lg text-center text-sm text-slate-500 sm:text-base">
-          Un vistazo rápido a lo que encontrarás dentro del builder.
+          Del prompt al sitio publicado en pocos pasos.
         </p>
         <div className="mb-8 flex flex-wrap justify-center gap-3 sm:gap-4">
           {previewTiles.map((t) => (

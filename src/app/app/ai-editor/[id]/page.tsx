@@ -38,6 +38,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { useOmniWallet } from '@/hooks/useOmniWallet';
+import { RewardBadge } from '@/components/omni/RewardBadge';
 import {
   Dialog,
   DialogContent,
@@ -96,6 +98,8 @@ interface HistoryEntry {
 
 export default function AIEditorPage() {
   const { user, loading: authLoading } = useAuth();
+  const { mint, chess } = useOmniWallet();
+  const multiplier = chess?.multiplier ?? 1;
   const router = useRouter();
   const params = useParams();
   const { toast } = useToast();
@@ -281,6 +285,14 @@ Puedes pedirme cosas como:
         };
 
         setMessages(prev => [...prev, assistantMessage]);
+
+        const reward = await mint('wai-refine');
+        if (reward?.ok && reward.result?.toastMessage) {
+          toast({
+            title: `+${reward.result.minted} ${reward.result.symbol}`,
+            description: reward.result.toastMessage,
+          });
+        }
       } else {
         const errorMessage: ChatMessage = {
           id: `error-${Date.now()}`,
@@ -388,6 +400,13 @@ Puedes pedirme cosas como:
         title: 'Template guardado',
         description: `Template "${template.name}" actualizado exitosamente`,
       });
+      const reward = await mint('wai-save');
+      if (reward?.ok && reward.result?.toastMessage) {
+        toast({
+          title: `+${reward.result.minted} ${reward.result.symbol}`,
+          description: reward.result.toastMessage,
+        });
+      }
     } catch (error) {
       console.error('Error saving template:', error);
       toast({
@@ -424,6 +443,13 @@ Puedes pedirme cosas como:
         title: 'Sitio publicado',
         description: `URL copiada: ${siteUrl}`,
       });
+      const reward = await mint('wai-publish');
+      if (reward?.ok && reward.result?.toastMessage) {
+        toast({
+          title: `+${reward.result.minted} ${reward.result.symbol}`,
+          description: reward.result.toastMessage,
+        });
+      }
     } catch (error) {
       console.error('Error publishing:', error);
       toast({
@@ -436,7 +462,7 @@ Puedes pedirme cosas como:
     }
   };
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     const blob = new Blob([currentCode], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -446,6 +472,13 @@ Puedes pedirme cosas como:
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+    const reward = await mint('wai-download');
+    if (reward?.ok && reward.result?.toastMessage) {
+      toast({
+        title: `+${reward.result.minted} ${reward.result.symbol}`,
+        description: reward.result.toastMessage,
+      });
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -686,33 +719,36 @@ Puedes pedirme cosas como:
               variant="outline"
               size="sm"
               onClick={handleDownload}
-              className="border-gray-700 text-gray-300 hover:bg-gray-800"
+              className="border-gray-700 text-gray-300 hover:bg-gray-800 gap-1"
             >
-              <Download className="mr-1 h-4 w-4" />
+              <Download className="h-4 w-4" />
               Descargar
+              <RewardBadge taskId="wai-download" multiplier={multiplier} variant="soft" />
             </Button>
             <Button
               variant="outline"
               size="sm"
               onClick={handleSave}
               disabled={saving || !hasUnsavedChanges}
-              className="border-gray-700 text-gray-300 hover:bg-gray-800"
+              className="border-gray-700 text-gray-300 hover:bg-gray-800 gap-1"
             >
               {saving ? (
-                <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                <Save className="mr-1 h-4 w-4" />
+                <Save className="h-4 w-4" />
               )}
               Guardar
+              <RewardBadge taskId="wai-save" multiplier={multiplier} variant="soft" />
             </Button>
             <Button
               onClick={handlePublish}
               disabled={isPublishing}
-              className="bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700"
+              className="bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 gap-1"
               size="sm"
             >
-              {isPublishing ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Globe className="mr-1 h-4 w-4" />}
+              {isPublishing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Globe className="h-4 w-4" />}
               Publicar
+              <RewardBadge taskId="wai-publish" multiplier={multiplier} variant="solid" />
             </Button>
           </div>
         </div>
